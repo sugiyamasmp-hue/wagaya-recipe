@@ -303,6 +303,7 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
 </div>
 
 <script>
+// グローバル関数として定義
 // ==============================
 // ★ここを書き換えてください★
 // ==============================
@@ -326,7 +327,7 @@ let newStepCount = 1;
 
 const emojis = ['🍲','🥟','🍳','🍜','🥩','🍛','🥗','🍱','🍝','🍤'];
 
-async function init() {
+window.init = async function() {
   const { data: { session } } = await sb.auth.getSession();
   if (session) { currentUser = session.user; showApp(); }
   sb.auth.onAuthStateChange((event, session) => {
@@ -335,7 +336,7 @@ async function init() {
   });
 }
 
-function showApp() {
+window.showApp = function() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('userEmail').textContent = currentUser.email;
@@ -343,26 +344,26 @@ function showApp() {
   loadPublicRecipes();
 }
 
-function showAuth() {
+window.showAuth = function() {
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('appScreen').style.display = 'none';
 }
 
-function switchAuthTab(tab) {
+window.switchAuthTab = function(tab) {
   document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='signup'&&i===1)));
   document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
   document.getElementById('authMessage').innerHTML = '';
 }
 
-async function login() {
+window.login = async function() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) document.getElementById('authMessage').innerHTML = '<span style="color:#e53e3e">ログインに失敗しました</span>';
 }
 
-async function signup() {
+window.signup = async function() {
   const email = document.getElementById('signupEmail').value;
   const password = document.getElementById('signupPassword').value;
   const { error } = await sb.auth.signUp({ email, password });
@@ -370,49 +371,49 @@ async function signup() {
   else { document.getElementById('authMessage').innerHTML = '<span style="color:#4a7c59">✅ 登録完了！ログインしてください</span>'; switchAuthTab('login'); }
 }
 
-async function logout() {
+window.logout = async function() {
   await sb.auth.signOut();
   document.getElementById('userMenu').classList.remove('open');
 }
 
-function toggleUserMenu() {
+window.toggleUserMenu = function() {
   document.getElementById('userMenu').classList.toggle('open');
 }
 
-async function loadMyRecipes() {
+window.loadMyRecipes = async function() {
   const { data } = await sb.from('recipes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   myRecipes = data || [];
   renderMyRecipes(myRecipes);
 }
 
-async function loadPublicRecipes() {
+window.loadPublicRecipes = async function() {
   const { data } = await sb.from('recipes').select('*').in('visibility', ['public', 'teaser']).order('created_at', { ascending: false });
   publicRecipes = data || [];
   renderPublicRecipes(publicRecipes);
 }
 
-function visLabel(v) { return v==='public'?'公開':v==='teaser'?'一部公開':'非公開'; }
-function genreLabel(g) { return g==='main'?'🍽️メイン':g==='side'?'🥗副菜':g==='soup'?'🍜汁物':g==='dessert'?'🍰デザート':'その他'; }
-function statusLabel(s) { return s==='cook'?'🍳クック':'🥄スタンバイ'; }
+window.visLabel = function(v) { return v==='public'?'公開':v==='teaser'?'一部公開':'非公開'; }
+window.genreLabel = function(g) { return g==='main'?'🍽️メイン':g==='side'?'🥗副菜':g==='soup'?'🍜汁物':g==='dessert'?'🍰デザート':'その他'; }
+window.statusLabel = function(s) { return s==='cook'?'🍳クック':'🥄スタンバイ'; }
 
-function renderMyRecipes(recipes) {
+window.renderMyRecipes = function(recipes) {
   const grid = document.getElementById('myRecipeGrid');
   if (!recipes.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">まだレシピがありません<br>＋ボタンで追加しましょう</div></div>'; return; }
   grid.innerHTML = recipes.map((r,i) => `<div class="recipe-card" onclick="openRecipe('${r.id}')"><div class="recipe-img">${r.photo_url ? `<img src="${r.photo_url}" style="width:100%;height:100%;object-fit:cover">` : emojis[i%emojis.length]}</div><div class="recipe-info"><div class="recipe-name">${r.title}</div><div class="recipe-meta"><span class="badge badge-${r.visibility}">${visLabel(r.visibility)}</span><span>${r.servings}人前</span></div></div></div>`).join('');
 }
 
-function renderPublicRecipes(recipes) {
+window.renderPublicRecipes = function(recipes) {
   const grid = document.getElementById('publicRecipeGrid');
   if (!recipes.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🌐</div><div class="empty-text">公開レシピがまだありません</div></div>'; return; }
   grid.innerHTML = recipes.map((r,i) => `<div class="recipe-card" onclick="openRecipe('${r.id}')"><div class="recipe-img">${r.photo_url ? `<img src="${r.photo_url}" style="width:100%;height:100%;object-fit:cover">` : emojis[i%emojis.length]}</div><div class="recipe-info"><div class="recipe-name">${r.title}</div><div class="recipe-meta"><span class="badge badge-${r.visibility}">${visLabel(r.visibility)}</span><span>${r.servings}人前</span></div></div></div>`).join('');
 }
 
-function filterRecipes() {
+window.filterRecipes = function() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   renderMyRecipes(myRecipes.filter(r => r.title.toLowerCase().includes(q)));
 }
 
-async function openRecipe(id) {
+window.openRecipe = async function(id) {
   const recipe = [...myRecipes, ...publicRecipes].find(r => r.id === id);
   if (!recipe) return;
   currentRecipe = recipe;
@@ -442,9 +443,9 @@ async function openRecipe(id) {
   document.getElementById('recipeModal').classList.add('open');
 }
 
-function typeLabel(t) { return t==='prep'?'🔪 仕込み':t==='cook'?'🍳 調理':'🎨 盛り付け'; }
+window.typeLabel = function(t) { return t==='prep'?'🔪 仕込み':t==='cook'?'🍳 調理':'🎨 盛り付け'; }
 
-function renderIngredients() {
+window.renderIngredients = function() {
   const ratio = currentServing / baseServing;
   document.getElementById('ingredientRows').innerHTML = currentIngredients.map(ing => {
     const scaledAmount = ing.amount ? Math.round(ing.amount * (currentServing/baseServing) * 10) / 10 : '';
@@ -455,9 +456,9 @@ function renderIngredients() {
   document.getElementById('tblServing').textContent = currentServing;
 }
 
-function changeServing(d) { currentServing = Math.max(1, currentServing + d); renderIngredients(); }
+window.changeServing = function(d) { currentServing = Math.max(1, currentServing + d); renderIngredients(); }
 
-function editRecipe() {
+window.editRecipe = function() {
   if (!currentRecipe) return;
   // フォームに既存データを入れる
   document.getElementById('newTitle').value = currentRecipe.title;
@@ -515,7 +516,7 @@ function editRecipe() {
   document.querySelector('#newRecipeModal .btn-primary').textContent = '✏️ 更新する';
 }
 
-function previewPhoto(input) {
+window.previewPhoto = function(input) {
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = e => {
@@ -526,7 +527,7 @@ function previewPhoto(input) {
   }
 }
 
-async function uploadPhoto(recipeId) {
+window.uploadPhoto = async function(recipeId) {
   const input = document.getElementById('photoInput');
   if (!input.files || !input.files[0]) return null;
   const file = input.files[0];
@@ -538,31 +539,19 @@ async function uploadPhoto(recipeId) {
   return data.publicUrl;
 }
 
-function shareRecipe() {
+window.shareRecipe = function() {
   if (!currentRecipe) return;
   alert(`📤 このレシピを贈る\n\nレシピID: ${currentRecipe.id}\nパスワード: ${currentRecipe.password||'（未設定）'}\n\nLINEやメールで送ってください！`);
 }
 
-function openNewRecipeModal() {
+window.openNewRecipeModal = function() {
   document.getElementById('newRecipeModal').classList.add('open');
   // フォームリセット
   document.getElementById('photoUpload').innerHTML = '<span class="photo-upload-icon">🍽️</span><span class="photo-upload-label">タップして写真を追加</span><input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">';
   window.uploadedPhotoFile = null;
 }
 
-function previewPhoto(input) {
-  if (!input.files || !input.files[0]) return;
-  window.uploadedPhotoFile = input.files[0];
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const upload = document.getElementById('photoUpload');
-    upload.innerHTML = `<img src="${e.target.result}"><input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)"><div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.5);color:white;font-size:11px;padding:4px 8px;border-radius:8px">タップして変更</div>`;
-    upload.onclick = () => document.getElementById('photoInput').click();
-  };
-  reader.readAsDataURL(input.files[0]);
-}
-
-async function uploadPhoto(recipeId) {
+window.uploadPhoto = async function(recipeId) {
   if (!window.uploadedPhotoFile) return null;
   const file = window.uploadedPhotoFile;
   const ext = file.name.split('.').pop();
@@ -572,9 +561,9 @@ async function uploadPhoto(recipeId) {
   const { data } = sb.storage.from('recipe-photos').getPublicUrl(path);
   return data.publicUrl;
 }
-function changeNewServing(d) { newServing = Math.max(1, newServing + d); document.getElementById('newServingNum').textContent = newServing; }
+window.changeNewServing = function(d) { newServing = Math.max(1, newServing + d); document.getElementById('newServingNum').textContent = newServing; }
 
-function addNewIngredient() {
+window.addNewIngredient = function() {
   const div = document.createElement('div');
   div.className = 'ingredient-row';
   div.style.flexWrap = 'wrap';
@@ -582,7 +571,7 @@ function addNewIngredient() {
   document.getElementById('newIngredients').appendChild(div);
 }
 
-function addNewStep() {
+window.addNewStep = function() {
   newStepCount++;
   const div = document.createElement('div');
   div.className = 'step-row';
@@ -590,13 +579,13 @@ function addNewStep() {
   document.getElementById('newSteps').appendChild(div);
 }
 
-function selectVis(el, vis) {
+window.selectVis = function(el, vis) {
   document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   selectedVisibility = vis;
 }
 
-async function saveRecipe() {
+window.saveRecipe = async function() {
   // 編集モードの場合は更新処理
   if (window.editingRecipeId) {
     await updateRecipe();
@@ -644,9 +633,9 @@ async function saveRecipe() {
   document.getElementById('newServingNum').textContent = '2';
 }
 
-function openImportModal() { document.getElementById('importModal').classList.add('open'); }
+window.openImportModal = function() { document.getElementById('importModal').classList.add('open'); }
 
-async function importRecipe() {
+window.importRecipe = async function() {
   const id = document.getElementById('importId').value.trim();
   const password = document.getElementById('importPassword').value.trim();
   const msg = document.getElementById('importMessage');
@@ -664,13 +653,13 @@ async function importRecipe() {
   loadMyRecipes();
 }
 
-function switchTab(el, tabId) {
+window.switchTab = function(el, tabId) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   ['my','public'].forEach(id => document.getElementById('tab-'+id).style.display = id===tabId?'block':'none');
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); }
 
 document.addEventListener('click', e => {
   const menu = document.getElementById('userMenu');
