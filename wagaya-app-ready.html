@@ -6,57 +6,236 @@
 <title>我が家のレシピ</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#fdf6ec;--warm:#f5e6c8;--brown:#5c3d1e;--accent:#c0622a;--muted:#9b7b5a;--green:#4a7c59;--card:#fffdf8;--shadow:rgba(92,61,30,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--brown);min-height:100vh}
+input,select,textarea,button{font-family:'Noto Sans JP',sans-serif}
+.input-field{width:100%;padding:12px 14px;border:1.5px solid var(--warm);border-radius:10px;font-size:14px;color:var(--brown);background:white;outline:none;box-sizing:border-box}
+.input-field:focus{border-color:var(--accent)}
+textarea.input-field{resize:none;height:72px;line-height:1.6}
+.select-field{width:100%;padding:12px 14px;border:1.5px solid var(--warm);border-radius:10px;font-size:14px;color:var(--brown);background:white;outline:none}
+.btn{flex:1;padding:13px;border-radius:12px;border:none;font-size:13px;font-weight:500;cursor:pointer}
+.btn-primary{background:var(--accent);color:white}
+.btn-secondary{background:var(--warm);color:var(--brown)}
+.btn-danger{background:#fde8dc;color:#e53e3e}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:24px 20px}
+.form-modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:24px 20px}
+.modal-handle{width:40px;height:4px;background:var(--warm);border-radius:2px;margin:0 auto 20px}
+.form-section{margin-bottom:20px}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block;font-weight:500}
+.ingredient-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.unit-select{padding:10px 6px;border:1.5px solid var(--warm);border-radius:10px;font-size:12px;color:var(--brown);background:white;outline:none;width:72px;flex-shrink:0}
+.del-btn{width:30px;height:30px;border-radius:50%;border:none;background:#fde8dc;color:var(--accent);font-size:16px;cursor:pointer;flex-shrink:0}
+.add-btn{width:100%;padding:10px;background:var(--warm);border:1.5px dashed #d4a870;border-radius:10px;font-size:13px;color:var(--muted);cursor:pointer;margin-top:4px}
+.step-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.step-badge{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:12px}
+.vis-option{display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1.5px solid var(--warm);border-radius:10px;cursor:pointer;margin-bottom:8px}
+.vis-option.selected{border-color:var(--accent);background:#fff5ef}
+.vis-check{font-size:18px;color:var(--accent);opacity:0}
+.vis-option.selected .vis-check{opacity:1}
+.photo-upload{width:100%;height:140px;background:var(--warm);border-radius:12px;border:2px dashed #d4a870;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;position:relative;overflow:hidden}
+.photo-upload img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.serving-row{display:flex;align-items:center;gap:12px;background:white;border:1.5px solid var(--warm);border-radius:10px;padding:10px 14px}
+.s-btn{width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:white;font-size:18px;cursor:pointer}
+.s-num{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-family:'Noto Serif JP',serif}
+.tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap}
+.tag-prep{background:#e8f0fe;color:#3a5fc8}
+.tag-cook{background:#fde8dc;color:#c0622a}
+.tag-plate{background:#e8f4ed;color:#4a7c59}
+</style>
 </head>
-<body style="background:#fdf6ec;font-family:Noto Sans JP,sans-serif;color:#5c3d1e;margin:0">
+<body>
 
+<!-- 認証画面 -->
 <div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
-  <div style="background:white;border-radius:16px;padding:32px 24px;width:100%;max-width:400px;box-shadow:0 4px 20px rgba(92,61,30,0.12)">
-    <div style="font-family:Noto Serif JP,serif;font-size:24px;color:#5c3d1e;text-align:center;margin-bottom:4px">🍲 我が家のレシピ</div>
-    <div style="font-size:12px;color:#9b7b5a;text-align:center;margin-bottom:24px">wagaya no recipe</div>
-    <div style="display:flex;margin-bottom:24px;border-bottom:2px solid #f5e6c8">
-      <div id="tabLogin" onclick="showTab('login')" style="flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;border-bottom:2px solid #c0622a;margin-bottom:-2px;color:#c0622a;font-weight:500">ログイン</div>
-      <div id="tabSignup" onclick="showTab('signup')" style="flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:#9b7b5a">新規登録</div>
+  <div style="background:white;border-radius:16px;padding:32px 24px;width:100%;max-width:400px;box-shadow:0 4px 20px var(--shadow)">
+    <div style="font-family:'Noto Serif JP',serif;font-size:24px;color:var(--brown);text-align:center;margin-bottom:4px">🍲 我が家のレシピ</div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px">wagaya no recipe</div>
+    <div style="display:flex;margin-bottom:24px;border-bottom:2px solid var(--warm)">
+      <div id="tabLogin" onclick="showAuthTab('login')" style="flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);font-weight:500">ログイン</div>
+      <div id="tabSignup" onclick="showAuthTab('signup')" style="flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:var(--muted)">新規登録</div>
     </div>
     <div id="loginForm">
-      <div style="margin-bottom:14px"><label style="font-size:12px;color:#9b7b5a;margin-bottom:6px;display:block">メールアドレス</label><input id="loginEmail" type="email" placeholder="example@mail.com" style="width:100%;padding:12px 14px;border:1.5px solid #f5e6c8;border-radius:10px;font-size:14px;color:#5c3d1e;outline:none;box-sizing:border-box"></div>
-      <div style="margin-bottom:14px"><label style="font-size:12px;color:#9b7b5a;margin-bottom:6px;display:block">パスワード</label><input id="loginPassword" type="password" placeholder="••••••••" style="width:100%;padding:12px 14px;border:1.5px solid #f5e6c8;border-radius:10px;font-size:14px;color:#5c3d1e;outline:none;box-sizing:border-box"></div>
-      <button id="loginBtn" style="width:100%;padding:13px;background:#c0622a;border:none;border-radius:12px;color:white;font-size:14px;cursor:pointer;margin-top:8px">ログイン</button>
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">メールアドレス</label><input id="loginEmail" type="email" placeholder="example@mail.com" class="input-field"></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">パスワード</label><input id="loginPassword" type="password" placeholder="••••••••" class="input-field"></div>
+      <button id="loginBtn" class="btn btn-primary" style="width:100%;margin-top:8px">ログイン</button>
     </div>
     <div id="signupForm" style="display:none">
-      <div style="margin-bottom:14px"><label style="font-size:12px;color:#9b7b5a;margin-bottom:6px;display:block">メールアドレス</label><input id="signupEmail" type="email" placeholder="example@mail.com" style="width:100%;padding:12px 14px;border:1.5px solid #f5e6c8;border-radius:10px;font-size:14px;color:#5c3d1e;outline:none;box-sizing:border-box"></div>
-      <div style="margin-bottom:14px"><label style="font-size:12px;color:#9b7b5a;margin-bottom:6px;display:block">パスワード（6文字以上）</label><input id="signupPassword" type="password" placeholder="••••••••" style="width:100%;padding:12px 14px;border:1.5px solid #f5e6c8;border-radius:10px;font-size:14px;color:#5c3d1e;outline:none;box-sizing:border-box"></div>
-      <button id="signupBtn" style="width:100%;padding:13px;background:#c0622a;border:none;border-radius:12px;color:white;font-size:14px;cursor:pointer;margin-top:8px">登録する</button>
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">メールアドレス</label><input id="signupEmail" type="email" placeholder="example@mail.com" class="input-field"></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">パスワード（6文字以上）</label><input id="signupPassword" type="password" placeholder="••••••••" class="input-field"></div>
+      <button id="signupBtn" class="btn btn-primary" style="width:100%;margin-top:8px">登録する</button>
     </div>
     <div id="authMsg" style="font-size:12px;text-align:center;margin-top:10px"></div>
   </div>
 </div>
 
+<!-- メインアプリ -->
 <div id="appScreen" style="display:none">
-  <div style="background:#5c3d1e;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
-    <h1 style="font-family:Noto Serif JP,serif;font-size:20px;color:#f5e6c8;margin:0">我が家のレシピ<span style="font-size:11px;display:block;color:#9b7b5a;font-family:Noto Sans JP,sans-serif;font-weight:300">wagaya no recipe</span></h1>
+  <div style="background:var(--brown);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100">
+    <h1 style="font-family:'Noto Serif JP',serif;font-size:20px;color:var(--warm);margin:0">我が家のレシピ<span style="font-size:11px;display:block;color:var(--muted);font-family:'Noto Sans JP',sans-serif;font-weight:300">wagaya no recipe</span></h1>
     <div style="display:flex;gap:16px">
-      <button id="importBtn" style="background:none;border:none;color:#f5e6c8;font-size:20px;cursor:pointer">📥</button>
-      <button id="logoutBtn" style="background:none;border:none;color:#f5e6c8;font-size:20px;cursor:pointer">👤</button>
+      <button id="importBtn" style="background:none;border:none;color:var(--warm);font-size:20px;cursor:pointer">📥</button>
+      <button id="logoutBtn" style="background:none;border:none;color:var(--warm);font-size:20px;cursor:pointer">👤</button>
     </div>
   </div>
-  <div style="background:#fffdf8;display:flex;border-bottom:2px solid #f5e6c8">
-    <div id="tabMy" onclick="switchTab('my')" style="flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;border-bottom:2px solid #c0622a;margin-bottom:-2px;color:#c0622a;font-weight:500"><span style="font-size:16px;display:block;margin-bottom:2px">📖</span>マイレシピ</div>
-    <div id="tabPublic" onclick="switchTab('public')" style="flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;color:#9b7b5a"><span style="font-size:16px;display:block;margin-bottom:2px">🌐</span>レシピ広場</div>
+  <div style="background:var(--card);display:flex;border-bottom:2px solid var(--warm)">
+    <div id="tabMy" onclick="switchTab('my')" style="flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);font-weight:500"><span style="font-size:16px;display:block;margin-bottom:2px">📖</span>マイレシピ</div>
+    <div id="tabPublic" onclick="switchTab('public')" style="flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;color:var(--muted)"><span style="font-size:16px;display:block;margin-bottom:2px">🌐</span>レシピ広場</div>
   </div>
   <div style="padding:16px;max-width:480px;margin:0 auto">
-    <div style="background:white;border:1.5px solid #f5e6c8;border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px;margin-bottom:20px">
-      <span>🔍</span><input id="searchInput" type="text" placeholder="レシピを検索..." oninput="filterRecipes()" style="border:none;outline:none;flex:1;font-size:14px;color:#5c3d1e;background:transparent">
+    <div style="background:white;border:1.5px solid var(--warm);border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px;margin-bottom:20px">
+      <span>🔍</span><input id="searchInput" type="text" placeholder="レシピを検索..." style="border:none;outline:none;flex:1;font-size:14px;color:var(--brown);background:transparent">
     </div>
     <div id="tabMyContent">
-      <div style="font-family:Noto Serif JP,serif;font-size:15px;color:#5c3d1e;margin-bottom:12px;display:flex;align-items:center;gap:8px">マイレシピ<span style="flex:1;height:1px;background:#f5e6c8;display:block"></span></div>
-      <div id="myGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px"><div style="grid-column:span 2;text-align:center;padding:40px 20px;color:#9b7b5a"><div style="font-size:48px;margin-bottom:12px">⏳</div><div>読み込み中...</div></div></div>
+      <div style="font-family:'Noto Serif JP',serif;font-size:15px;color:var(--brown);margin-bottom:12px">マイレシピ</div>
+      <div id="myGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px">
+        <div style="grid-column:span 2;text-align:center;padding:40px;color:var(--muted)">⏳ 読み込み中...</div>
+      </div>
     </div>
     <div id="tabPublicContent" style="display:none">
-      <div style="font-family:Noto Serif JP,serif;font-size:15px;color:#5c3d1e;margin-bottom:12px;display:flex;align-items:center;gap:8px">レシピ広場<span style="flex:1;height:1px;background:#f5e6c8;display:block"></span></div>
-      <div id="publicGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px"><div style="grid-column:span 2;text-align:center;padding:40px 20px;color:#9b7b5a"><div style="font-size:48px;margin-bottom:12px">⏳</div><div>読み込み中...</div></div></div>
+      <div style="font-family:'Noto Serif JP',serif;font-size:15px;color:var(--brown);margin-bottom:12px">レシピ広場</div>
+      <div id="publicGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px">
+        <div style="grid-column:span 2;text-align:center;padding:40px;color:var(--muted)">⏳ 読み込み中...</div>
+      </div>
     </div>
   </div>
-  <button id="fabBtn" style="position:fixed;bottom:24px;right:20px;width:56px;height:56px;border-radius:50%;background:#c0622a;color:white;font-size:28px;border:none;box-shadow:0 4px 16px rgba(192,98,42,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:150">＋</button>
+  <button id="fabBtn" style="position:fixed;bottom:24px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:white;font-size:28px;border:none;box-shadow:0 4px 16px rgba(192,98,42,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:150">＋</button>
+</div>
+
+<!-- レシピ詳細モーダル -->
+<div class="modal-overlay" id="recipeModal" onclick="closeModal('recipeModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modalPhoto" style="height:180px;background:var(--warm);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:16px;overflow:hidden"></div>
+    <div id="modalTitle" style="font-family:'Noto Serif JP',serif;font-size:20px;margin-bottom:6px"></div>
+    <div id="modalMeta" style="font-size:12px;color:var(--muted);margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap"></div>
+    <div style="background:var(--warm);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px">👨‍👩‍👧‍👦 人数を変える</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="changeServing(-1)" style="width:30px;height:30px;border-radius:50%;border:none;background:var(--accent);color:white;font-size:18px;cursor:pointer">－</button>
+        <span id="servingNum" style="font-family:'Noto Serif JP',serif;font-size:20px;font-weight:700;min-width:30px;text-align:center">2</span>
+        <button onclick="changeServing(1)" style="width:30px;height:30px;border-radius:50%;border:none;background:var(--accent);color:white;font-size:18px;cursor:pointer">＋</button>
+      </div>
+    </div>
+    <div style="font-family:'Noto Serif JP',serif;font-size:14px;color:var(--brown);margin-bottom:10px">🛒 材料（<span id="tblServing">2</span>人前）</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px">
+      <tbody id="ingredientRows"></tbody>
+    </table>
+    <div style="font-family:'Noto Serif JP',serif;font-size:14px;color:var(--brown);margin-bottom:10px">👨‍🍳 作り方</div>
+    <ol id="stepsList" style="list-style:none;margin-bottom:24px"></ol>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('recipeModal')">閉じる</button>
+      <button id="editBtn" class="btn btn-secondary" onclick="editCurrentRecipe()">✏️ 編集</button>
+      <button id="deleteBtn" class="btn btn-danger" onclick="deleteCurrentRecipe()">🗑️</button>
+      <button id="shareBtn" class="btn btn-primary" onclick="shareCurrentRecipe()">🔗 贈る</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新規/編集レシピモーダル -->
+<div class="modal-overlay" id="formModal" onclick="closeModal('formModal')">
+  <div class="form-modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 id="formTitle" style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:20px">新しいレシピ</h2>
+
+    <div class="form-section">
+      <label class="form-label">📷 完成写真</label>
+      <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+        <span style="font-size:36px;position:relative;z-index:1">🍽️</span>
+        <span style="font-size:13px;color:var(--muted);position:relative;z-index:1">タップして写真を追加</span>
+        <input type="file" id="photoInput" accept="image/*" style="display:none">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">🍳 料理名</label>
+      <input id="newTitle" type="text" placeholder="例：浩之特製 豚角煮のオレンジ煮" class="input-field">
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">📝 一言コンセプト</label>
+      <input id="newDesc" type="text" placeholder="例：お母さんから受け継いだ味" class="input-field">
+    </div>
+
+    <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="form-label">📌 ステータス</label>
+        <select id="newStatus" class="select-field">
+          <option value="standby">🥄 スタンバイ</option>
+          <option value="cook">🍳 クック</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">🍽️ ジャンル</label>
+        <select id="newGenre" class="select-field">
+          <option value="main">メイン</option>
+          <option value="side">副菜</option>
+          <option value="soup">汁物</option>
+          <option value="dessert">デザート</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">🥩 主な材料</label>
+      <input id="newMainIngredient" type="text" placeholder="例：豚肉、鶏肉、野菜など" class="input-field">
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">👨‍👩‍👧 基本の人数</label>
+      <div class="serving-row">
+        <span style="flex:1;font-size:14px">何人前？</span>
+        <button class="s-btn" onclick="changeNewServing(-1)">－</button>
+        <span class="s-num" id="newServingNum">2</span>
+        <button class="s-btn" onclick="changeNewServing(1)">＋</button>
+        <span style="font-size:13px;color:var(--muted)">人前</span>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">🛒 材料・分量</label>
+      <div id="newIngredients"></div>
+      <button class="add-btn" onclick="addIngredientRow()">＋ 材料を追加</button>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">👨‍🍳 作り方</label>
+      <div id="newSteps"></div>
+      <button class="add-btn" onclick="addStepRow()">＋ 手順を追加</button>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">🔒 公開設定</label>
+      <div class="vis-option selected" onclick="selectVis(this,'private')"><div style="font-size:20px">🔒</div><div style="flex:1"><div style="font-size:13px;font-weight:500">非公開</div><div style="font-size:11px;color:var(--muted);margin-top:2px">自分だけが見られる</div></div><div class="vis-check">✓</div></div>
+      <div class="vis-option" onclick="selectVis(this,'teaser')"><div style="font-size:20px">👁️</div><div style="flex:1"><div style="font-size:13px;font-weight:500">一部公開</div><div style="font-size:11px;color:var(--muted);margin-top:2px">写真とコンセプトだけ見せる</div></div><div class="vis-check">✓</div></div>
+      <div class="vis-option" onclick="selectVis(this,'public')"><div style="font-size:20px">🌐</div><div style="flex:1"><div style="font-size:13px;font-weight:500">公開</div><div style="font-size:11px;color:var(--muted);margin-top:2px">みんなが無料でインポートできる</div></div><div class="vis-check">✓</div></div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding-bottom:32px">
+      <button class="btn btn-secondary" onclick="closeModal('formModal')">キャンセル</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveRecipe()">📖 保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- インポートモーダル -->
+<div class="modal-overlay" id="importModal" onclick="closeModal('importModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:6px">📥 レシピをインポート</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px">レシピIDとパスワードを入力してください</p>
+    <div style="margin-bottom:14px"><label class="form-label">レシピID</label><input id="importId" type="text" placeholder="例: abc123" class="input-field"></div>
+    <div style="margin-bottom:14px"><label class="form-label">パスワード</label><input id="importPassword" type="password" placeholder="••••••••" class="input-field"></div>
+    <div id="importMsg" style="font-size:12px;text-align:center;margin-top:10px"></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="importRecipe()">インポートする</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -67,42 +246,75 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let myRecipes = [];
 let publicRecipes = [];
+let currentRecipe = null;
+let currentIngredients = [];
+let baseServing = 2;
+let currentServing = 2;
+let newServing = 2;
+let selectedVis = 'private';
+let editingId = null;
+let stepCount = 0;
+let uploadedFile = null;
 const emojis = ['🍲','🥟','🍳','🍜','🥩','🍛','🥗','🍱','🍝','🍤'];
 
-// 認証
+// 初期化
 sb.auth.getSession().then(({data:{session}}) => {
   if (session) { currentUser = session.user; showApp(); }
 });
+
 sb.auth.onAuthStateChange((e, session) => {
   if (session) { currentUser = session.user; showApp(); }
   else { currentUser = null; document.getElementById('authScreen').style.display='flex'; document.getElementById('appScreen').style.display='none'; }
 });
 
-function showTab(tab) {
+// 認証タブ
+function showAuthTab(tab) {
   document.getElementById('loginForm').style.display = tab==='login' ? 'block' : 'none';
   document.getElementById('signupForm').style.display = tab==='signup' ? 'block' : 'none';
-  document.getElementById('tabLogin').style.cssText = tab==='login' ? 'flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;border-bottom:2px solid #c0622a;margin-bottom:-2px;color:#c0622a;font-weight:500' : 'flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:#9b7b5a';
-  document.getElementById('tabSignup').style.cssText = tab==='signup' ? 'flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;border-bottom:2px solid #c0622a;margin-bottom:-2px;color:#c0622a;font-weight:500' : 'flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:#9b7b5a';
+  ['tabLogin','tabSignup'].forEach((id,i) => {
+    const active = (tab==='login' && i===0) || (tab==='signup' && i===1);
+    document.getElementById(id).style.cssText = active
+      ? 'flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);font-weight:500'
+      : 'flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:var(--muted)';
+  });
 }
 
 document.getElementById('loginBtn').addEventListener('click', async () => {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  const {error} = await sb.auth.signInWithPassword({email, password});
+  const {error} = await sb.auth.signInWithPassword({
+    email: document.getElementById('loginEmail').value,
+    password: document.getElementById('loginPassword').value
+  });
   if (error) document.getElementById('authMsg').innerHTML = '<span style="color:#e53e3e">ログインに失敗しました</span>';
 });
 
 document.getElementById('signupBtn').addEventListener('click', async () => {
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const {error} = await sb.auth.signUp({email, password});
+  const {error} = await sb.auth.signUp({
+    email: document.getElementById('signupEmail').value,
+    password: document.getElementById('signupPassword').value
+  });
   if (error) document.getElementById('authMsg').innerHTML = '<span style="color:#e53e3e">登録に失敗しました</span>';
-  else { document.getElementById('authMsg').innerHTML = '<span style="color:#4a7c59">✅ 登録完了！ログインしてください</span>'; showTab('login'); }
+  else { document.getElementById('authMsg').innerHTML = '<span style="color:#4a7c59">✅ 登録完了！ログインしてください</span>'; showAuthTab('login'); }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', () => sb.auth.signOut());
-document.getElementById('importBtn').addEventListener('click', () => alert('インポート機能は準備中です'));
-document.getElementById('fabBtn').addEventListener('click', () => alert('新規レシピ登録は準備中です'));
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importModal').classList.add('open'));
+document.getElementById('fabBtn').addEventListener('click', () => openNewRecipeForm());
+document.getElementById('searchInput').addEventListener('input', () => {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderMyRecipes(myRecipes.filter(r => r.title.toLowerCase().includes(q)));
+});
+
+document.getElementById('photoInput').addEventListener('change', function() {
+  if (!this.files[0]) return;
+  uploadedFile = this.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const upload = document.getElementById('photoUpload');
+    upload.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"><div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.5);color:white;font-size:11px;padding:4px 8px;border-radius:8px;z-index:1">変更</div><input type="file" id="photoInput" accept="image/*" style="display:none">`;
+    document.getElementById('photoInput').addEventListener('change', arguments.callee);
+  };
+  reader.readAsDataURL(this.files[0]);
+});
 
 function showApp() {
   document.getElementById('authScreen').style.display = 'none';
@@ -124,15 +336,21 @@ async function loadPublicRecipes() {
 }
 
 function visLabel(v) { return v==='public'?'公開':v==='teaser'?'一部公開':'非公開'; }
+function genreLabel(g) { return g==='main'?'メイン':g==='side'?'副菜':g==='soup'?'汁物':g==='dessert'?'デザート':'その他'; }
+function statusLabel(s) { return s==='cook'?'🍳クック':'🥄スタンバイ'; }
+function typeLabel(t) { return t==='prep'?'🔪 仕込み':t==='cook'?'🍳 調理':'🎨 盛り付け'; }
+function typeClass(t) { return t==='prep'?'tag-prep':t==='cook'?'tag-cook':'tag-plate'; }
 
 function recipeCard(r, i) {
-  const img = r.photo_url ? `<img src="${r.photo_url}" style="width:100%;height:100%;object-fit:cover">` : emojis[i % emojis.length];
-  return `<div onclick="openRecipe('${r.id}')" style="background:#fffdf8;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(92,61,30,0.12);cursor:pointer">
-    <div style="width:100%;height:110px;background:#f5e6c8;display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden">${img}</div>
+  const img = r.photo_url
+    ? `<img src="${r.photo_url}" style="width:100%;height:100%;object-fit:cover">`
+    : emojis[i % emojis.length];
+  return `<div onclick="openRecipe('${r.id}')" style="background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px var(--shadow);cursor:pointer">
+    <div style="width:100%;height:110px;background:var(--warm);display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden">${img}</div>
     <div style="padding:10px">
-      <div style="font-family:Noto Serif JP,serif;font-size:13px;font-weight:700;margin-bottom:4px;line-height:1.4">${r.title}</div>
-      <div style="font-size:11px;color:#9b7b5a;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f5e6c8;color:#9b7b5a">${visLabel(r.visibility)}</span>
+      <div style="font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;margin-bottom:4px;line-height:1.4">${r.title}</div>
+      <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:10px;padding:2px 6px;border-radius:10px;background:var(--warm);color:var(--muted)">${visLabel(r.visibility)}</span>
         <span>${r.servings}人前</span>
       </div>
     </div>
@@ -140,32 +358,308 @@ function recipeCard(r, i) {
 }
 
 function renderMyRecipes(recipes) {
-  const grid = document.getElementById('myGrid');
-  if (!recipes.length) { grid.innerHTML = '<div style="grid-column:span 2;text-align:center;padding:40px 20px;color:#9b7b5a"><div style="font-size:48px;margin-bottom:12px">📖</div><div>まだレシピがありません<br>＋ボタンで追加しましょう</div></div>'; return; }
-  grid.innerHTML = recipes.map((r,i) => recipeCard(r,i)).join('');
+  const g = document.getElementById('myGrid');
+  if (!recipes.length) { g.innerHTML = '<div style="grid-column:span 2;text-align:center;padding:40px;color:var(--muted)"><div style="font-size:48px;margin-bottom:12px">📖</div>まだレシピがありません<br>＋ボタンで追加しましょう</div>'; return; }
+  g.innerHTML = recipes.map((r,i) => recipeCard(r,i)).join('');
 }
 
 function renderPublicRecipes(recipes) {
-  const grid = document.getElementById('publicGrid');
-  if (!recipes.length) { grid.innerHTML = '<div style="grid-column:span 2;text-align:center;padding:40px 20px;color:#9b7b5a"><div style="font-size:48px;margin-bottom:12px">🌐</div><div>公開レシピがまだありません</div></div>'; return; }
-  grid.innerHTML = recipes.map((r,i) => recipeCard(r,i)).join('');
-}
-
-function filterRecipes() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  renderMyRecipes(myRecipes.filter(r => r.title.toLowerCase().includes(q)));
+  const g = document.getElementById('publicGrid');
+  if (!recipes.length) { g.innerHTML = '<div style="grid-column:span 2;text-align:center;padding:40px;color:var(--muted)"><div style="font-size:48px;margin-bottom:12px">🌐</div>公開レシピがまだありません</div>'; return; }
+  g.innerHTML = recipes.map((r,i) => recipeCard(r,i)).join('');
 }
 
 function switchTab(tab) {
   document.getElementById('tabMyContent').style.display = tab==='my' ? 'block' : 'none';
   document.getElementById('tabPublicContent').style.display = tab==='public' ? 'block' : 'none';
-  document.getElementById('tabMy').style.cssText = tab==='my' ? 'flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;border-bottom:2px solid #c0622a;margin-bottom:-2px;color:#c0622a;font-weight:500' : 'flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;color:#9b7b5a';
-  document.getElementById('tabPublic').style.cssText = tab==='public' ? 'flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;border-bottom:2px solid #c0622a;margin-bottom:-2px;color:#c0622a;font-weight:500' : 'flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;color:#9b7b5a';
+  ['tabMy','tabPublic'].forEach((id,i) => {
+    const active = (tab==='my'&&i===0)||(tab==='public'&&i===1);
+    document.getElementById(id).style.cssText = active
+      ? 'flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);font-weight:500'
+      : 'flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;color:var(--muted)';
+  });
 }
 
 async function openRecipe(id) {
-  alert('レシピ詳細は次のバージョンで実装します！');
+  const recipe = [...myRecipes, ...publicRecipes].find(r => r.id === id);
+  if (!recipe) return;
+  currentRecipe = recipe;
+  baseServing = recipe.servings;
+  currentServing = recipe.servings;
+
+  // 写真
+  const photo = document.getElementById('modalPhoto');
+  if (recipe.photo_url) photo.innerHTML = `<img src="${recipe.photo_url}" style="width:100%;height:100%;object-fit:cover">`;
+  else { photo.innerHTML = emojis[Math.floor(Math.random()*emojis.length)]; }
+
+  document.getElementById('modalTitle').textContent = recipe.title;
+  document.getElementById('servingNum').textContent = currentServing;
+  document.getElementById('tblServing').textContent = currentServing;
+
+  const meta = document.getElementById('modalMeta');
+  meta.innerHTML = `<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:var(--warm);color:var(--muted)">${visLabel(recipe.visibility)}</span>`;
+  if (recipe.description) meta.innerHTML += `<span>${recipe.description}</span>`;
+  if (recipe.genre) meta.innerHTML += `<span>${genreLabel(recipe.genre)}</span>`;
+  if (recipe.status) meta.innerHTML += `<span>${statusLabel(recipe.status)}</span>`;
+
+  // 材料
+  const {data: ings} = await sb.from('ingredients').select('*').eq('recipe_id', id).order('order_num');
+  currentIngredients = ings || [];
+  renderIngredients();
+
+  // 手順
+  const {data: stps} = await sb.from('steps').select('*').eq('recipe_id', id).order('order_num');
+  document.getElementById('stepsList').innerHTML = (stps||[]).map((s,i) => `
+    <li style="display:flex;gap:12px;margin-bottom:14px;font-size:13px;line-height:1.6;align-items:flex-start">
+      <span style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">${i+1}</span>
+      <span class="tag ${typeClass(s.type)}">${typeLabel(s.type)}</span>
+      <div>${s.content}${s.youtube_url ? `<br><a href="${s.youtube_url}" target="_blank" style="font-size:11px;color:#e53e3e;text-decoration:none">▶️ 動画で見る</a>` : ''}</div>
+    </li>`).join('');
+
+  const isOwner = recipe.user_id === currentUser.id;
+  document.getElementById('editBtn').style.display = isOwner ? 'block' : 'none';
+  document.getElementById('deleteBtn').style.display = isOwner ? 'block' : 'none';
+  document.getElementById('shareBtn').style.display = isOwner ? 'block' : 'none';
+
+  document.getElementById('recipeModal').classList.add('open');
 }
+
+function renderIngredients() {
+  const ratio = currentServing / baseServing;
+  document.getElementById('ingredientRows').innerHTML = currentIngredients.map(ing => {
+    const scaled = ing.amount ? Math.round(ing.amount * ratio * 10) / 10 : '';
+    const display = scaled ? `${scaled}${ing.unit||''}` : (ing.unit||'');
+    const memo = ing.memo ? `<br><span style="font-size:11px;color:var(--muted)">${ing.memo}</span>` : '';
+    return `<tr><td style="padding:8px 12px;border-bottom:1px solid var(--warm)">${ing.name}${memo}</td><td style="padding:8px 12px;border-bottom:1px solid var(--warm);text-align:right;color:var(--accent);font-weight:500">${display}</td></tr>`;
+  }).join('');
+  document.getElementById('servingNum').textContent = currentServing;
+  document.getElementById('tblServing').textContent = currentServing;
+}
+
+function changeServing(d) { currentServing = Math.max(1, currentServing+d); renderIngredients(); }
+
+function shareCurrentRecipe() {
+  if (!currentRecipe) return;
+  alert(`📤 このレシピを贈る
+
+レシピID: ${currentRecipe.id}
+パスワード: ${currentRecipe.password||'（未設定）'}
+
+LINEやメールで送ってください！`);
+}
+
+async function deleteCurrentRecipe() {
+  if (!currentRecipe) return;
+  if (!confirm(`「${currentRecipe.title}」を削除しますか？`)) return;
+  await sb.from('ingredients').delete().eq('recipe_id', currentRecipe.id);
+  await sb.from('steps').delete().eq('recipe_id', currentRecipe.id);
+  await sb.from('recipes').delete().eq('id', currentRecipe.id);
+  closeModal('recipeModal');
+  loadMyRecipes();
+}
+
+// フォーム
+function unitOptions(selected='g') {
+  return ['g','ml','個','本','枚','大さじ','小さじ','適量'].map(u =>
+    `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
+}
+
+function addIngredientRow(name='', amount='', unit='g', memo='') {
+  const div = document.createElement('div');
+  div.className = 'ingredient-row';
+  div.style.flexWrap = 'wrap';
+  div.innerHTML = `
+    <div style="display:flex;gap:6px;width:100%;align-items:center">
+      <input type="text" class="input-field" placeholder="材料名" style="flex:2" value="${name}">
+      <input type="number" class="input-field" placeholder="量" style="flex:1" value="${amount}">
+      <select class="unit-select">${unitOptions(unit)}</select>
+      <button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button>
+    </div>
+    <input type="text" class="input-field" placeholder="メモ（例：大さじ1）" style="width:100%;margin-top:4px;font-size:12px" value="${memo}">`;
+  document.getElementById('newIngredients').appendChild(div);
+}
+
+function addStepRow(content='') {
+  stepCount++;
+  const div = document.createElement('div');
+  div.className = 'step-row';
+  div.innerHTML = `<div class="step-badge">${stepCount}</div><textarea class="input-field" placeholder="手順を入力...">${content}</textarea>`;
+  document.getElementById('newSteps').appendChild(div);
+}
+
+function selectVis(el, vis) {
+  document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedVis = vis;
+}
+
+function changeNewServing(d) {
+  newServing = Math.max(1, newServing+d);
+  document.getElementById('newServingNum').textContent = newServing;
+}
+
+function resetForm() {
+  document.getElementById('newTitle').value = '';
+  document.getElementById('newDesc').value = '';
+  document.getElementById('newMainIngredient').value = '';
+  document.getElementById('newStatus').value = 'standby';
+  document.getElementById('newGenre').value = 'main';
+  document.getElementById('newIngredients').innerHTML = '';
+  document.getElementById('newSteps').innerHTML = '';
+  document.getElementById('photoUpload').innerHTML = '<span style="font-size:36px;position:relative;z-index:1">🍽️</span><span style="font-size:13px;color:var(--muted);position:relative;z-index:1">タップして写真を追加</span><input type="file" id="photoInput" accept="image/*" style="display:none">';
+  document.getElementById('photoInput').addEventListener('change', handlePhotoChange);
+  document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
+  document.querySelector('.vis-option').classList.add('selected');
+  newServing = 2; stepCount = 0; selectedVis = 'private'; uploadedFile = null; editingId = null;
+  document.getElementById('newServingNum').textContent = '2';
+  addIngredientRow(); addIngredientRow();
+  addStepRow();
+}
+
+function handlePhotoChange() {
+  if (!this.files[0]) return;
+  uploadedFile = this.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const upload = document.getElementById('photoUpload');
+    upload.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"><div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.5);color:white;font-size:11px;padding:4px 8px;border-radius:8px;z-index:1">変更</div><input type="file" id="photoInput" accept="image/*" style="display:none">`;
+    document.getElementById('photoInput').addEventListener('change', handlePhotoChange);
+  };
+  reader.readAsDataURL(this.files[0]);
+}
+
+function openNewRecipeForm() {
+  editingId = null;
+  document.getElementById('formTitle').textContent = '新しいレシピ';
+  document.getElementById('saveBtn').textContent = '📖 保存する';
+  resetForm();
+  document.getElementById('formModal').classList.add('open');
+}
+
+async function editCurrentRecipe() {
+  if (!currentRecipe) return;
+  editingId = currentRecipe.id;
+  document.getElementById('formTitle').textContent = 'レシピを編集';
+  document.getElementById('saveBtn').textContent = '✏️ 更新する';
+  resetForm();
+
+  document.getElementById('newTitle').value = currentRecipe.title || '';
+  document.getElementById('newDesc').value = currentRecipe.description || '';
+  document.getElementById('newMainIngredient').value = currentRecipe.main_ingredient || '';
+  document.getElementById('newStatus').value = currentRecipe.status || 'standby';
+  document.getElementById('newGenre').value = currentRecipe.genre || 'main';
+  newServing = currentRecipe.servings;
+  document.getElementById('newServingNum').textContent = newServing;
+  selectedVis = currentRecipe.visibility;
+  document.querySelectorAll('.vis-option').forEach(o => {
+    o.classList.remove('selected');
+    if (o.getAttribute('onclick').includes(`'${selectedVis}'`)) o.classList.add('selected');
+  });
+
+  document.getElementById('newIngredients').innerHTML = '';
+  currentIngredients.forEach(ing => addIngredientRow(ing.name, ing.amount||'', ing.unit||'g', ing.memo||''));
+  if (!currentIngredients.length) { addIngredientRow(); addIngredientRow(); }
+
+  document.getElementById('newSteps').innerHTML = '';
+  stepCount = 0;
+  const {data: stps} = await sb.from('steps').select('*').eq('recipe_id', editingId).order('order_num');
+  (stps||[]).forEach(s => addStepRow(s.content));
+  if (!(stps||[]).length) addStepRow();
+
+  if (currentRecipe.photo_url) {
+    const upload = document.getElementById('photoUpload');
+    upload.innerHTML = `<img src="${currentRecipe.photo_url}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"><div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.5);color:white;font-size:11px;padding:4px 8px;border-radius:8px;z-index:1">変更</div><input type="file" id="photoInput" accept="image/*" style="display:none">`;
+    document.getElementById('photoInput').addEventListener('change', handlePhotoChange);
+  }
+
+  closeModal('recipeModal');
+  document.getElementById('formModal').classList.add('open');
+}
+
+async function uploadPhoto(recipeId) {
+  if (!uploadedFile) return null;
+  const ext = uploadedFile.name.split('.').pop();
+  const path = `${currentUser.id}/${recipeId}.${ext}`;
+  const {error} = await sb.storage.from('recipe-photos').upload(path, uploadedFile, {upsert:true});
+  if (error) { console.error(error); return null; }
+  const {data} = sb.storage.from('recipe-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function saveRecipe() {
+  const title = document.getElementById('newTitle').value.trim();
+  if (!title) { alert('料理名を入力してください'); return; }
+
+  const recipeData = {
+    title,
+    description: document.getElementById('newDesc').value.trim(),
+    servings: newServing,
+    visibility: selectedVis,
+    status: document.getElementById('newStatus').value,
+    genre: document.getElementById('newGenre').value,
+    main_ingredient: document.getElementById('newMainIngredient').value.trim(),
+  };
+
+  let recipeId = editingId;
+
+  if (editingId) {
+    await sb.from('recipes').update(recipeData).eq('id', editingId);
+  } else {
+    const {data, error} = await sb.from('recipes').insert({...recipeData, user_id: currentUser.id}).select().single();
+    if (error) { alert('保存に失敗しました'); return; }
+    recipeId = data.id;
+  }
+
+  // 写真アップロード
+  if (uploadedFile) {
+    const url = await uploadPhoto(recipeId);
+    if (url) await sb.from('recipes').update({photo_url: url}).eq('id', recipeId);
+  }
+
+  // 材料保存
+  await sb.from('ingredients').delete().eq('recipe_id', recipeId);
+  const ings = [];
+  document.querySelectorAll('#newIngredients .ingredient-row').forEach((row, i) => {
+    const inputs = row.querySelectorAll('input');
+    const select = row.querySelector('select');
+    const name = inputs[0].value.trim();
+    if (name) ings.push({recipe_id: recipeId, name, amount: parseFloat(inputs[1].value)||null, unit: select?.value||'g', memo: inputs[2]?.value.trim()||'', order_num: i});
+  });
+  if (ings.length) await sb.from('ingredients').insert(ings);
+
+  // 手順保存
+  await sb.from('steps').delete().eq('recipe_id', recipeId);
+  const stps = [];
+  document.querySelectorAll('#newSteps .step-row').forEach((row, i) => {
+    const content = row.querySelector('textarea').value.trim();
+    if (content) stps.push({recipe_id: recipeId, order_num: i, type: 'cook', content});
+  });
+  if (stps.length) await sb.from('steps').insert(stps);
+
+  closeModal('formModal');
+  alert(editingId ? '✅ レシピを更新しました！' : '✅ レシピを保存しました！');
+  loadMyRecipes();
+}
+
+async function importRecipe() {
+  const id = document.getElementById('importId').value.trim();
+  const password = document.getElementById('importPassword').value.trim();
+  const msg = document.getElementById('importMsg');
+  if (!id) { msg.innerHTML = '<span style="color:#e53e3e">レシピIDを入力してください</span>'; return; }
+  const {data: recipe} = await sb.from('recipes').select('*').eq('id', id).single();
+  if (!recipe) { msg.innerHTML = '<span style="color:#e53e3e">レシピが見つかりません</span>'; return; }
+  if (recipe.visibility === 'private' && recipe.password !== password) { msg.innerHTML = '<span style="color:#e53e3e">パスワードが違います</span>'; return; }
+  const {data: newRecipe} = await sb.from('recipes').insert({user_id: currentUser.id, title: recipe.title, description: recipe.description, servings: recipe.servings, visibility: 'private', parent_recipe_id: recipe.id}).select().single();
+  const {data: ings} = await sb.from('ingredients').select('*').eq('recipe_id', id);
+  if (ings?.length) await sb.from('ingredients').insert(ings.map(i => ({...i, id:undefined, recipe_id:newRecipe.id})));
+  const {data: stps} = await sb.from('steps').select('*').eq('recipe_id', id);
+  if (stps?.length) await sb.from('steps').insert(stps.map(s => ({...s, id:undefined, recipe_id:newRecipe.id})));
+  closeModal('importModal');
+  alert('✅ レシピをインポートしました！');
+  loadMyRecipes();
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 </script>
 </body>
 </html>
