@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我が家のレシピ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#fdf6ec;--warm:#f5e6c8;--brown:#5c3d1e;--accent:#c0622a;--muted:#9b7b5a;--green:#4a7c59;--card:#fffdf8;--shadow:rgba(92,61,30,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--brown);min-height:100vh}
+header{background:var(--brown);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+header h1{font-family:'Noto Serif JP',serif;font-size:20px;color:var(--warm)}
+header h1 span{font-size:11px;display:block;color:var(--muted);font-family:'Noto Sans JP',sans-serif;font-weight:300}
+.icon-btn{background:none;border:none;color:var(--warm);font-size:20px;cursor:pointer;padding:4px}
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-box{background:white;border-radius:16px;padding:32px 24px;width:100%;max-width:400px;box-shadow:0 4px 20px var(--shadow)}
+.auth-logo{font-family:'Noto Serif JP',serif;font-size:24px;color:var(--brown);text-align:center;margin-bottom:4px}
+.auth-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
+.auth-tabs{display:flex;margin-bottom:24px;border-bottom:2px solid var(--warm)}
+.auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.input-group{margin-bottom:14px}
+.input-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+.input-field{width:100%;padding:12px 14px;border:1.5px solid var(--warm);border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--brown);background:white;outline:none}
+.input-field:focus{border-color:var(--accent)}
+.auth-btn{width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;color:white;font-size:14px;font-family:'Noto Serif JP',serif;cursor:pointer;margin-top:8px}
+.auth-msg{font-size:12px;text-align:center;margin-top:10px}
+.tabs{background:var(--card);display:flex;border-bottom:2px solid var(--warm)}
+.tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.tab-icon{font-size:16px;display:block;margin-bottom:2px}
+main{padding:16px;max-width:480px;margin:0 auto}
+.search-bar{background:white;border:1.5px solid var(--warm);border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.search-bar input{border:none;outline:none;flex:1;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--brown);background:transparent}
+.section-title{font-family:'Noto Serif JP',serif;font-size:15px;color:var(--brown);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--warm)}
+.recipe-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.recipe-card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px var(--shadow);cursor:pointer;transition:transform 0.2s}
+.recipe-card:active{transform:scale(0.97)}
+.recipe-img{width:100%;height:110px;background:var(--warm);display:flex;align-items:center;justify-content:center;font-size:40px}
+.recipe-info{padding:10px}
+.recipe-name{font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;margin-bottom:4px;line-height:1.4}
+.recipe-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.badge{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:500}
+.badge-private{background:var(--warm);color:var(--muted)}
+.badge-public{background:#e8f4ed;color:var(--green)}
+.badge-teaser{background:#e8f0fe;color:#3a5fc8}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-height:85vh;overflow-y:auto;padding:24px 20px}
+.modal-handle{width:40px;height:4px;background:var(--warm);border-radius:2px;margin:0 auto 20px}
+.modal-title{font-family:'Noto Serif JP',serif;font-size:20px;margin-bottom:6px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.modal-emoji{font-size:80px;text-align:center;background:var(--warm);border-radius:16px;padding:20px;margin-bottom:20px}
+.serving-control{background:var(--warm);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.serving-btns{display:flex;align-items:center;gap:12px}
+.serving-btn{width:30px;height:30px;border-radius:50%;border:none;background:var(--accent);color:white;font-size:18px;cursor:pointer}
+.serving-num{font-family:'Noto Serif JP',serif;font-size:20px;font-weight:700;min-width:30px;text-align:center}
+.ingredient-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+.ingredient-table th{background:var(--warm);padding:8px 12px;text-align:left;font-weight:500;font-size:12px;color:var(--muted)}
+.ingredient-table td{padding:8px 12px;border-bottom:1px solid var(--warm)}
+.ingredient-table td:last-child{text-align:right;color:var(--accent);font-weight:500}
+.steps-list{list-style:none;margin-bottom:24px}
+.steps-list li{display:flex;gap:12px;margin-bottom:14px;font-size:13px;line-height:1.6;align-items:flex-start}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;flex-shrink:0;margin-top:3px;white-space:nowrap}
+.tag-prep{background:#e8f0fe;color:#3a5fc8}
+.tag-cook{background:#fde8dc;color:#c0622a}
+.tag-plate{background:#e8f4ed;color:#4a7c59}
+.modal-actions{display:flex;gap:10px;margin-top:8px}
+.btn{flex:1;padding:13px;border-radius:12px;border:none;font-size:13px;font-family:'Noto Sans JP',sans-serif;font-weight:500;cursor:pointer}
+.btn-primary{background:var(--accent);color:white}
+.btn-secondary{background:var(--warm);color:var(--brown)}
+.fab{position:fixed;bottom:24px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:white;font-size:28px;border:none;box-shadow:0 4px 16px rgba(192,98,42,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:150}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);grid-column:span 2}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-text{font-size:14px;line-height:1.6}
+.form-section{margin-bottom:20px}
+.photo-upload{width:100%;height:160px;background:var(--warm);border-radius:12px;border:2px dashed #d4a870;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+.photo-upload:hover{border-color:var(--accent)}
+.photo-upload img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.photo-upload-label{font-size:13px;color:var(--muted);position:relative;z-index:1}
+.photo-upload-icon{font-size:36px;position:relative;z-index:1}
+.photo-upload{width:100%;height:160px;background:var(--warm);border-radius:12px;border:2px dashed #d4a870;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+.photo-upload:hover{opacity:0.85}
+.photo-upload img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.photo-upload-label{font-size:13px;color:var(--muted);position:relative;z-index:1}
+.photo-upload-icon{font-size:36px;position:relative;z-index:1}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block;font-weight:500}
+.serving-row{display:flex;align-items:center;gap:12px;background:white;border:1.5px solid var(--warm);border-radius:10px;padding:10px 14px}
+.s-btn{width:32px;height:32px;border-radius:50%;border:none;background:var(--accent);color:white;font-size:18px;cursor:pointer}
+.s-num{font-size:18px;font-weight:700;min-width:28px;text-align:center;font-family:'Noto Serif JP',serif}
+.ingredient-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.unit-select{padding:10px 6px;border:1.5px solid var(--warm);border-radius:10px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:var(--brown);background:white;outline:none;width:80px;flex-shrink:0}
+.unit-select:focus{border-color:var(--accent)}
+.del-btn{width:30px;height:30px;border-radius:50%;border:none;background:#fde8dc;color:var(--accent);font-size:16px;cursor:pointer;flex-shrink:0}
+.add-btn{width:100%;padding:10px;background:var(--warm);border:1.5px dashed #d4a870;border-radius:10px;font-size:13px;color:var(--muted);cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:4px}
+.step-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.step-num-badge{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:12px}
+textarea.input-field{resize:none;height:72px;line-height:1.6}
+.vis-option{display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1.5px solid var(--warm);border-radius:10px;cursor:pointer;margin-bottom:8px}
+.vis-option.selected{border-color:var(--accent);background:#fff5ef}
+.vis-icon{font-size:20px}
+.vis-info{flex:1}
+.vis-title{font-size:13px;font-weight:500}
+.vis-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.vis-check{font-size:18px;color:var(--accent);opacity:0}
+.vis-option.selected .vis-check{opacity:1}
+.select-field{width:100%;padding:12px 14px;border:1.5px solid var(--warm);border-radius:10px;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--brown);background:white;outline:none}
+.select-field:focus{border-color:var(--accent)}
+.user-menu{position:fixed;top:60px;right:12px;background:white;border-radius:12px;padding:8px;box-shadow:0 4px 20px var(--shadow);z-index:300;display:none;min-width:160px}
+.user-menu.open{display:block}
+.user-email{padding:10px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--warm);margin-bottom:4px}
+.user-menu-item{padding:10px 14px;font-size:13px;cursor:pointer;border-radius:8px}
+.form-modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:24px 20px}
+</style>
+</head>
+<body>
+
+<!-- 認証画面 -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">🍲 我が家のレシピ</div>
+    <div class="auth-sub">wagaya no recipe</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">ログイン</div>
+      <div class="auth-tab" onclick="switchAuthTab('signup')">新規登録</div>
+    </div>
+    <div id="loginForm">
+      <div class="input-group"><label class="input-label">メールアドレス</label><input class="input-field" type="email" id="loginEmail" placeholder="example@mail.com"></div>
+      <div class="input-group"><label class="input-label">パスワード</label><input class="input-field" type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="auth-btn" onclick="login()">ログイン</button>
+    </div>
+    <div id="signupForm" style="display:none">
+      <div class="input-group"><label class="input-label">メールアドレス</label><input class="input-field" type="email" id="signupEmail" placeholder="example@mail.com"></div>
+      <div class="input-group"><label class="input-label">パスワード（6文字以上）</label><input class="input-field" type="password" id="signupPassword" placeholder="••••••••"></div>
+      <button class="auth-btn" onclick="signup()">登録する</button>
+    </div>
+    <div id="authMessage" class="auth-msg"></div>
+  </div>
+</div>
+
+<!-- メインアプリ -->
+<div id="appScreen" style="display:none">
+  <header>
+    <h1>我が家のレシピ<span>wagaya no recipe</span></h1>
+    <div style="display:flex;gap:16px">
+      <button class="icon-btn" onclick="openImportModal()">📥</button>
+      <button class="icon-btn" onclick="toggleUserMenu()">👤</button>
+    </div>
+  </header>
+  <div class="user-menu" id="userMenu">
+    <div class="user-email" id="userEmail"></div>
+    <div class="user-menu-item" onclick="logout()">🚪 ログアウト</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(this,'my')"><span class="tab-icon">📖</span>マイレシピ</div>
+    <div class="tab" onclick="switchTab(this,'public')"><span class="tab-icon">🌐</span>レシピ広場</div>
+  </div>
+  <main>
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="レシピを検索..." id="searchInput" oninput="filterRecipes()">
+    </div>
+    <div id="tab-my">
+      <div class="section-title">マイレシピ</div>
+      <div id="myRecipeGrid" class="recipe-grid"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">読み込み中...</div></div></div>
+    </div>
+    <div id="tab-public" style="display:none">
+      <div class="section-title">レシピ広場</div>
+      <div id="publicRecipeGrid" class="recipe-grid"><div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">読み込み中...</div></div></div>
+    </div>
+  </main>
+  <button class="fab" onclick="openNewRecipeModal()">＋</button>
+</div>
+
+<!-- レシピ詳細モーダル -->
+<div class="modal-overlay" id="recipeModal" onclick="closeModal('recipeModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-emoji" id="modalEmoji">🍽️</div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="serving-control">
+      <span style="font-size:13px">👨‍👩‍👧‍👦 人数を変える</span>
+      <div class="serving-btns">
+        <button class="serving-btn" onclick="changeServing(-1)">－</button>
+        <span class="serving-num" id="servingNum">2</span>
+        <button class="serving-btn" onclick="changeServing(1)">＋</button>
+      </div>
+    </div>
+    <table class="ingredient-table">
+      <tr><th>材料</th><th>分量（<span id="tblServing">2</span>人前）</th></tr>
+      <tbody id="ingredientRows"></tbody>
+    </table>
+    <div class="section-title" style="margin-bottom:10px">作り方</div>
+    <ol class="steps-list" id="stepsList"></ol>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('recipeModal')">閉じる</button>
+      <button class="btn btn-secondary" id="editBtn" onclick="editRecipe()">✏️ 編集</button>
+      <button class="btn btn-primary" id="shareBtn" onclick="shareRecipe()">🔗 贈る</button>
+    </div>
+  </div>
+</div>
+
+<!-- レシピ登録モーダル -->
+<div class="modal-overlay" id="newRecipeModal" onclick="closeModal('newRecipeModal')">
+  <div class="form-modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:20px">新しいレシピ</h2>
+    <div class="form-section">
+      <label class="form-label">📷 完成写真</label>
+      <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+        <span class="photo-upload-icon">🍽️</span>
+        <span class="photo-upload-label">タップして写真を追加</span>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+    </div>
+    <div class="form-section">
+      <label class="form-label">📷 完成写真</label>
+      <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+        <span class="photo-upload-icon">🍽️</span>
+        <span class="photo-upload-label">タップして写真を追加</span>
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+      </div>
+    </div>
+    <div class="form-section"><label class="form-label">🍳 料理名</label><input class="input-field" type="text" id="newTitle" placeholder="例：豚角煮のオレンジ煮"></div>
+    <div class="form-section"><label class="form-label">📝 一言コンセプト</label><input class="input-field" type="text" id="newDesc" placeholder="例：お母さんから受け継いだ味"></div>
+    <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="form-label">📌 ステータス</label>
+        <select class="select-field" id="newStatus">
+          <option value="standby">🥄 スタンバイ</option>
+          <option value="cook">🍳 クック</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">🍽️ ジャンル</label>
+        <select class="select-field" id="newGenre">
+          <option value="main">メイン</option>
+          <option value="side">副菜</option>
+          <option value="soup">汁物</option>
+          <option value="dessert">デザート</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-section"><label class="form-label">🥩 主な材料</label><input class="input-field" type="text" id="newMainIngredient" placeholder="例：豚肉、鶏肉、野菜など"></div>
+    <div class="form-section">
+      <label class="form-label">👨‍👩‍👧 基本の人数</label>
+      <div class="serving-row">
+        <span style="flex:1;font-size:14px">何人前？</span>
+        <button class="s-btn" onclick="changeNewServing(-1)">－</button>
+        <span class="s-num" id="newServingNum">2</span>
+        <button class="s-btn" onclick="changeNewServing(1)">＋</button>
+        <span style="font-size:13px;color:var(--muted)">人前</span>
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">🛒 材料・分量</label>
+      <div id="newIngredients">
+        <div class="ingredient-row" style="flex-wrap:wrap"><div style="display:flex;gap:6px;width:100%;align-items:center"><input class="input-field" type="text" placeholder="材料名" style="flex:2"><input class="input-field" type="number" placeholder="量" style="flex:1"><select class="unit-select"><option value="g">g</option><option value="ml">ml</option><option value="個">個</option><option value="本">本</option><option value="枚">枚</option><option value="大さじ">大さじ</option><option value="小さじ">小さじ</option><option value="適量">適量</option></select><button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button></div><input class="input-field" type="text" placeholder="メモ（例：大さじ1）" style="width:100%;margin-top:4px;font-size:12px"></div>
+        <div class="ingredient-row" style="flex-wrap:wrap"><div style="display:flex;gap:6px;width:100%;align-items:center"><input class="input-field" type="text" placeholder="材料名" style="flex:2"><input class="input-field" type="number" placeholder="量" style="flex:1"><select class="unit-select"><option value="g">g</option><option value="ml">ml</option><option value="個">個</option><option value="本">本</option><option value="枚">枚</option><option value="大さじ">大さじ</option><option value="小さじ">小さじ</option><option value="適量">適量</option></select><button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button></div><input class="input-field" type="text" placeholder="メモ（例：大さじ1）" style="width:100%;margin-top:4px;font-size:12px"></div>
+      </div>
+      <button class="add-btn" onclick="addNewIngredient()">＋ 材料を追加</button>
+    </div>
+    <div class="form-section">
+      <label class="form-label">👨‍🍳 作り方</label>
+      <div id="newSteps">
+        <div class="step-row"><div class="step-num-badge">1</div><textarea class="input-field" placeholder="手順を入力..."></textarea></div>
+      </div>
+      <button class="add-btn" onclick="addNewStep()">＋ 手順を追加</button>
+    </div>
+    <div class="form-section">
+      <label class="form-label">🔒 公開設定</label>
+      <div class="vis-option selected" onclick="selectVis(this,'private')"><div class="vis-icon">🔒</div><div class="vis-info"><div class="vis-title">非公開</div><div class="vis-desc">自分だけが見られる</div></div><div class="vis-check">✓</div></div>
+      <div class="vis-option" onclick="selectVis(this,'teaser')"><div class="vis-icon">👁️</div><div class="vis-info"><div class="vis-title">一部公開</div><div class="vis-desc">写真とコンセプトだけ見せる</div></div><div class="vis-check">✓</div></div>
+      <div class="vis-option" onclick="selectVis(this,'public')"><div class="vis-icon">🌐</div><div class="vis-info"><div class="vis-title">公開</div><div class="vis-desc">みんなが無料でインポートできる</div></div><div class="vis-check">✓</div></div>
+    </div>
+    <div style="display:flex;gap:10px;padding-bottom:32px">
+      <button class="btn btn-secondary" onclick="closeModal('newRecipeModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveRecipe()">📖 保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- インポートモーダル -->
+<div class="modal-overlay" id="importModal" onclick="closeModal('importModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:6px">📥 レシピをインポート</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px">レシピIDとパスワードを入力してください</p>
+    <div class="input-group"><label class="input-label">レシピID</label><input class="input-field" type="text" id="importId" placeholder="例: abc123"></div>
+    <div class="input-group"><label class="input-label">パスワード</label><input class="input-field" type="password" id="importPassword" placeholder="••••••••"></div>
+    <div id="importMessage" style="font-size:12px;text-align:center;margin-top:10px"></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="importRecipe()">インポートする</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==============================
+// ★ここを書き換えてください★
+// ==============================
+const SUPABASE_URL = 'https://bobditigjxeofsfofsrb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvYmRpdGlnanhlb2ZzZm9mc3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NDY0NDAsImV4cCI6MjA5NDMyMjQ0MH0.P_umtNBTpBfJ5Ke48AX9Qo4z_2NftYGZMxkJDS_7ijU';
+// ==============================
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let myRecipes = [];
+let publicRecipes = [];
+let currentRecipe = null;
+let currentIngredients = [];
+let baseServing = 2;
+let currentServing = 2;
+let newServing = 2;
+let selectedVisibility = 'private';
+let newStepCount = 1;
+
+const emojis = ['🍲','🥟','🍳','🍜','🥩','🍛','🥗','🍱','🍝','🍤'];
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; showApp(); }
+  sb.auth.onAuthStateChange((event, session) => {
+    if (session) { currentUser = session.user; showApp(); }
+    else { currentUser = null; showAuth(); }
+  });
+}
+
+function showApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userEmail').textContent = currentUser.email;
+  loadMyRecipes();
+  loadPublicRecipes();
+}
+
+function showAuth() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display = 'none';
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='signup'&&i===1)));
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('authMessage').innerHTML = '';
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) document.getElementById('authMessage').innerHTML = '<span style="color:#e53e3e">ログインに失敗しました</span>';
+}
+
+async function signup() {
+  const email = document.getElementById('signupEmail').value;
+  const password = document.getElementById('signupPassword').value;
+  const { error } = await sb.auth.signUp({ email, password });
+  if (error) document.getElementById('authMessage').innerHTML = '<span style="color:#e53e3e">登録に失敗しました</span>';
+  else { document.getElementById('authMessage').innerHTML = '<span style="color:#4a7c59">✅ 登録完了！ログインしてください</span>'; switchAuthTab('login'); }
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  document.getElementById('userMenu').classList.remove('open');
+}
+
+function toggleUserMenu() {
+  document.getElementById('userMenu').classList.toggle('open');
+}
+
+async function loadMyRecipes() {
+  const { data } = await sb.from('recipes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  myRecipes = data || [];
+  renderMyRecipes(myRecipes);
+}
+
+async function loadPublicRecipes() {
+  const { data } = await sb.from('recipes').select('*').in('visibility', ['public', 'teaser']).order('created_at', { ascending: false });
+  publicRecipes = data || [];
+  renderPublicRecipes(publicRecipes);
+}
+
+function visLabel(v) { return v==='public'?'公開':v==='teaser'?'一部公開':'非公開'; }
+function genreLabel(g) { return g==='main'?'🍽️メイン':g==='side'?'🥗副菜':g==='soup'?'🍜汁物':g==='dessert'?'🍰デザート':'その他'; }
+function statusLabel(s) { return s==='cook'?'🍳クック':'🥄スタンバイ'; }
+
+function renderMyRecipes(recipes) {
+  const grid = document.getElementById('myRecipeGrid');
+  if (!recipes.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">まだレシピがありません<br>＋ボタンで追加しましょう</div></div>'; return; }
+  grid.innerHTML = recipes.map((r,i) => `<div class="recipe-card" onclick="openRecipe('${r.id}')"><div class="recipe-img">${r.photo_url ? `<img src="${r.photo_url}" style="width:100%;height:100%;object-fit:cover">` : emojis[i%emojis.length]}</div><div class="recipe-info"><div class="recipe-name">${r.title}</div><div class="recipe-meta"><span class="badge badge-${r.visibility}">${visLabel(r.visibility)}</span><span>${r.servings}人前</span></div></div></div>`).join('');
+}
+
+function renderPublicRecipes(recipes) {
+  const grid = document.getElementById('publicRecipeGrid');
+  if (!recipes.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🌐</div><div class="empty-text">公開レシピがまだありません</div></div>'; return; }
+  grid.innerHTML = recipes.map((r,i) => `<div class="recipe-card" onclick="openRecipe('${r.id}')"><div class="recipe-img">${r.photo_url ? `<img src="${r.photo_url}" style="width:100%;height:100%;object-fit:cover">` : emojis[i%emojis.length]}</div><div class="recipe-info"><div class="recipe-name">${r.title}</div><div class="recipe-meta"><span class="badge badge-${r.visibility}">${visLabel(r.visibility)}</span><span>${r.servings}人前</span></div></div></div>`).join('');
+}
+
+function filterRecipes() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  renderMyRecipes(myRecipes.filter(r => r.title.toLowerCase().includes(q)));
+}
+
+async function openRecipe(id) {
+  const recipe = [...myRecipes, ...publicRecipes].find(r => r.id === id);
+  if (!recipe) return;
+  currentRecipe = recipe;
+  baseServing = recipe.servings;
+  currentServing = recipe.servings;
+  document.getElementById('modalTitle').textContent = recipe.title;
+  const emojiEl = document.getElementById('modalEmoji');
+  if (recipe.photo_url) {
+    emojiEl.innerHTML = `<img src="${recipe.photo_url}" style="width:100%;height:180px;object-fit:cover;border-radius:12px">`;
+    emojiEl.style.padding = '0';
+    emojiEl.style.fontSize = '0';
+  } else {
+    emojiEl.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    emojiEl.style.padding = '20px';
+    emojiEl.style.fontSize = '80px';
+  }
+  document.getElementById('servingNum').textContent = currentServing;
+  document.getElementById('tblServing').textContent = currentServing;
+  const sub = document.getElementById('modalSub');
+  sub.innerHTML = `<span class="badge badge-${recipe.visibility}">${visLabel(recipe.visibility)}</span>${recipe.description?`<span>${recipe.description}</span>`:''}`;
+  const { data: ings } = await sb.from('ingredients').select('*').eq('recipe_id', id).order('order_num');
+  currentIngredients = ings || [];
+  renderIngredients();
+  const { data: stps } = await sb.from('steps').select('*').eq('recipe_id', id).order('order_num');
+  document.getElementById('stepsList').innerHTML = (stps||[]).map((s,i) => `<li><span class="step-num">${i+1}</span><span class="step-tag tag-${s.type}">${typeLabel(s.type)}</span><div>${s.content}</div></li>`).join('');
+  document.getElementById('shareBtn').style.display = recipe.user_id === currentUser.id ? 'block' : 'none';
+  document.getElementById('recipeModal').classList.add('open');
+}
+
+function typeLabel(t) { return t==='prep'?'🔪 仕込み':t==='cook'?'🍳 調理':'🎨 盛り付け'; }
+
+function renderIngredients() {
+  const ratio = currentServing / baseServing;
+  document.getElementById('ingredientRows').innerHTML = currentIngredients.map(ing => {
+    const scaledAmount = ing.amount ? Math.round(ing.amount * (currentServing/baseServing) * 10) / 10 : '';
+    const display = scaledAmount ? `${scaledAmount}${ing.unit||''}` : (ing.unit||'');
+    return `<tr><td>${ing.name}</td><td>${display}</td></tr>`;
+  }).join('');
+  document.getElementById('servingNum').textContent = currentServing;
+  document.getElementById('tblServing').textContent = currentServing;
+}
+
+function changeServing(d) { currentServing = Math.max(1, currentServing + d); renderIngredients(); }
+
+function editRecipe() {
+  if (!currentRecipe) return;
+  // フォームに既存データを入れる
+  document.getElementById('newTitle').value = currentRecipe.title;
+  document.getElementById('newDesc').value = currentRecipe.description || '';
+  newServing = currentRecipe.servings;
+  document.getElementById('newServingNum').textContent = newServing;
+  document.getElementById('newStatus').value = currentRecipe.status || 'standby';
+  document.getElementById('newGenre').value = currentRecipe.genre || 'main';
+  document.getElementById('newMainIngredient').value = currentRecipe.main_ingredient || '';
+
+  // 公開設定
+  document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.vis-option').forEach(o => {
+    if (o.getAttribute('onclick').includes(currentRecipe.visibility)) o.classList.add('selected');
+  });
+  selectedVisibility = currentRecipe.visibility;
+
+  // 材料を入れる
+  const ingDiv = document.getElementById('newIngredients');
+  ingDiv.innerHTML = '';
+  currentIngredients.forEach(ing => {
+    const div = document.createElement('div');
+    div.className = 'ingredient-row';
+    div.style.flexWrap = 'wrap';
+    div.innerHTML = `<div style="display:flex;gap:6px;width:100%;align-items:center">
+      <input class="input-field" type="text" placeholder="材料名" style="flex:2" value="${ing.name}">
+      <input class="input-field" type="number" placeholder="量" style="flex:1" value="${ing.amount||''}">
+      <select class="unit-select">
+        <option value="g" ${ing.unit==='g'?'selected':''}>g</option>
+        <option value="ml" ${ing.unit==='ml'?'selected':''}>ml</option>
+        <option value="個" ${ing.unit==='個'?'selected':''}>個</option>
+        <option value="本" ${ing.unit==='本'?'selected':''}>本</option>
+        <option value="枚" ${ing.unit==='枚'?'selected':''}>枚</option>
+        <option value="大さじ" ${ing.unit==='大さじ'?'selected':''}>大さじ</option>
+        <option value="小さじ" ${ing.unit==='小さじ'?'selected':''}>小さじ</option>
+        <option value="適量" ${ing.unit==='適量'?'selected':''}>適量</option>
+      </select>
+      <button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button>
+    </div>
+    <input class="input-field" type="text" placeholder="メモ（例：大さじ1）" style="width:100%;margin-top:4px;font-size:12px" value="${ing.memo||''}">`;
+    ingDiv.appendChild(div);
+  });
+
+  // 手順を入れる
+  const stepsDiv = document.getElementById('newSteps');
+  stepsDiv.innerHTML = '';
+  newStepCount = 0;
+
+  // 編集モードフラグ
+  window.editingRecipeId = currentRecipe.id;
+
+  closeModal('recipeModal');
+  document.getElementById('newRecipeModal').classList.add('open');
+  // 保存ボタンのテキストを変更
+  document.querySelector('#newRecipeModal .btn-primary').textContent = '✏️ 更新する';
+}
+
+function previewPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const upload = document.getElementById('photoUpload');
+      upload.innerHTML = `<img src="${e.target.result}"><span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.5);color:white;font-size:11px;padding:4px 8px;border-radius:8px">変更</span>`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+async function uploadPhoto(recipeId) {
+  const input = document.getElementById('photoInput');
+  if (!input.files || !input.files[0]) return null;
+  const file = input.files[0];
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}/${recipeId}.${ext}`;
+  const { error } = await sb.storage.from('recipe-photos').upload(path, file, { upsert: true });
+  if (error) { console.error(error); return null; }
+  const { data } = sb.storage.from('recipe-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function shareRecipe() {
+  if (!currentRecipe) return;
+  alert(`📤 このレシピを贈る\n\nレシピID: ${currentRecipe.id}\nパスワード: ${currentRecipe.password||'（未設定）'}\n\nLINEやメールで送ってください！`);
+}
+
+function openNewRecipeModal() {
+  document.getElementById('newRecipeModal').classList.add('open');
+  // フォームリセット
+  document.getElementById('photoUpload').innerHTML = '<span class="photo-upload-icon">🍽️</span><span class="photo-upload-label">タップして写真を追加</span><input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">';
+  window.uploadedPhotoFile = null;
+}
+
+async function uploadPhoto(recipeId) {
+  if (!window.uploadedPhotoFile) return null;
+  const file = window.uploadedPhotoFile;
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}/${recipeId}.${ext}`;
+  const { error } = await sb.storage.from('recipe-photos').upload(path, file, { upsert: true });
+  if (error) { console.error(error); return null; }
+  const { data } = sb.storage.from('recipe-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+function changeNewServing(d) { newServing = Math.max(1, newServing + d); document.getElementById('newServingNum').textContent = newServing; }
+
+function addNewIngredient() {
+  const div = document.createElement('div');
+  div.className = 'ingredient-row';
+  div.style.flexWrap = 'wrap';
+  div.innerHTML = `<div style="display:flex;gap:6px;width:100%;align-items:center"><input class="input-field" type="text" placeholder="材料名" style="flex:2"><input class="input-field" type="number" placeholder="量" style="flex:1"><select class="unit-select"><option value="g">g</option><option value="ml">ml</option><option value="個">個</option><option value="本">本</option><option value="枚">枚</option><option value="大さじ">大さじ</option><option value="小さじ">小さじ</option><option value="適量">適量</option></select><button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button></div><input class="input-field" type="text" placeholder="メモ（例：大さじ1）" style="width:100%;margin-top:4px;font-size:12px">`;
+  document.getElementById('newIngredients').appendChild(div);
+}
+
+function addNewStep() {
+  newStepCount++;
+  const div = document.createElement('div');
+  div.className = 'step-row';
+  div.innerHTML = `<div class="step-num-badge">${newStepCount}</div><textarea class="input-field" placeholder="手順を入力..."></textarea>`;
+  document.getElementById('newSteps').appendChild(div);
+}
+
+function selectVis(el, vis) {
+  document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedVisibility = vis;
+}
+
+async function saveRecipe() {
+  // 編集モードの場合は更新処理
+  if (window.editingRecipeId) {
+    await updateRecipe();
+    window.editingRecipeId = null;
+    document.querySelector('#newRecipeModal .btn-primary').textContent = '📖 保存する';
+    return;
+  }
+  const title = document.getElementById('newTitle').value.trim();
+  if (!title) { alert('料理名を入力してください'); return; }
+  const { data: recipe, error } = await sb.from('recipes').insert({ user_id: currentUser.id, title, description: document.getElementById('newDesc').value.trim(), servings: newServing, visibility: selectedVisibility }).select().single();
+  if (error) { alert('保存に失敗しました'); return; }
+
+  // 写真アップロード
+  const photoUrl = await uploadPhoto(recipe.id);
+  if (photoUrl) {
+    await sb.from('recipes').update({ photo_url: photoUrl }).eq('id', recipe.id);
+  }
+  // 写真アップロード
+  const photoUrl = await uploadPhoto(recipe.id);
+  if (photoUrl) {
+    await sb.from('recipes').update({ photo_url: photoUrl }).eq('id', recipe.id);
+  }
+  const ings = [];
+  document.querySelectorAll('#newIngredients .ingredient-row').forEach((row,i) => {
+    const inputs = row.querySelectorAll('input');
+    const select = row.querySelector('select');
+    const name = inputs[0].value.trim();
+    const memoInput = row.querySelectorAll('input')[2]; if (name) ings.push({ recipe_id: recipe.id, name, amount: parseFloat(inputs[1].value)||null, unit: select ? select.value : 'g', memo: memoInput ? memoInput.value.trim() : '', order_num: i });
+  });
+  if (ings.length) await sb.from('ingredients').insert(ings);
+  const stps = [];
+  document.querySelectorAll('#newSteps .step-row').forEach((row,i) => {
+    const content = row.querySelector('textarea').value.trim();
+    if (content) stps.push({ recipe_id: recipe.id, order_num: i, type: 'cook', content });
+  });
+  if (stps.length) await sb.from('steps').insert(stps);
+  closeModal('newRecipeModal');
+  alert('✅ レシピを保存しました！');
+  loadMyRecipes();
+  document.getElementById('newTitle').value = '';
+  document.getElementById('newDesc').value = '';
+  document.getElementById('photoInput').value = '';
+  document.getElementById('photoUpload').innerHTML = '<span class="photo-upload-icon">🍽️</span><span class="photo-upload-label">タップして写真を追加</span>';
+  newServing = 2; newStepCount = 1;
+  document.getElementById('newServingNum').textContent = '2';
+}
+
+function openImportModal() { document.getElementById('importModal').classList.add('open'); }
+
+async function importRecipe() {
+  const id = document.getElementById('importId').value.trim();
+  const password = document.getElementById('importPassword').value.trim();
+  const msg = document.getElementById('importMessage');
+  if (!id) { msg.innerHTML = '<span style="color:#e53e3e">レシピIDを入力してください</span>'; return; }
+  const { data: recipe } = await sb.from('recipes').select('*').eq('id', id).single();
+  if (!recipe) { msg.innerHTML = '<span style="color:#e53e3e">レシピが見つかりません</span>'; return; }
+  if (recipe.visibility === 'private' && recipe.password !== password) { msg.innerHTML = '<span style="color:#e53e3e">パスワードが違います</span>'; return; }
+  const { data: newRecipe } = await sb.from('recipes').insert({ user_id: currentUser.id, title: recipe.title, description: recipe.description, servings: recipe.servings, visibility: 'private', parent_recipe_id: recipe.id }).select().single();
+  const { data: ings } = await sb.from('ingredients').select('*').eq('recipe_id', id);
+  if (ings?.length) await sb.from('ingredients').insert(ings.map(i => ({ ...i, id: undefined, recipe_id: newRecipe.id })));
+  const { data: stps } = await sb.from('steps').select('*').eq('recipe_id', id);
+  if (stps?.length) await sb.from('steps').insert(stps.map(s => ({ ...s, id: undefined, recipe_id: newRecipe.id })));
+  closeModal('importModal');
+  alert('✅ レシピをインポートしました！');
+  loadMyRecipes();
+}
+
+function switchTab(el, tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['my','public'].forEach(id => document.getElementById('tab-'+id).style.display = id===tabId?'block':'none');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.addEventListener('click', e => {
+  const menu = document.getElementById('userMenu');
+  if (menu.classList.contains('open') && !menu.contains(e.target) && !e.target.closest('.icon-btn')) menu.classList.remove('open');
+});
+
+init();
+</script>
+</body>
+</html>
