@@ -209,6 +209,12 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
     </div>
 
     <div class="form-section">
+      <label class="form-label">🔑 パスワード（贈る・販売用）</label>
+      <input id="newPassword" type="text" placeholder="例：haha0328（空白で未設定）" class="input-field">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">パスワードを設定すると、知っている人だけがインポートできます</div>
+    </div>
+
+    <div class="form-section">
       <label class="form-label">🔒 公開設定</label>
       <div class="vis-option selected" onclick="selectVis(this,'private')"><div style="font-size:20px">🔒</div><div style="flex:1"><div style="font-size:13px;font-weight:500">非公開</div><div style="font-size:11px;color:var(--muted);margin-top:2px">自分だけが見られる</div></div><div class="vis-check">✓</div></div>
       <div class="vis-option" onclick="selectVis(this,'teaser')"><div style="font-size:20px">👁️</div><div style="flex:1"><div style="font-size:13px;font-weight:500">一部公開</div><div style="font-size:11px;color:var(--muted);margin-top:2px">写真とコンセプトだけ見せる</div></div><div class="vis-check">✓</div></div>
@@ -500,6 +506,7 @@ function changeNewServing(d) {
 
 function resetForm() {
   document.getElementById('newTitle').value = '';
+  document.getElementById('newPassword').value = '';
   document.getElementById('newDesc').value = '';
   document.getElementById('newMainIngredient').value = '';
   document.getElementById('newStatus').value = 'standby';
@@ -546,6 +553,7 @@ async function editCurrentRecipe() {
 
   document.getElementById('newTitle').value = currentRecipe.title || '';
   document.getElementById('newDesc').value = currentRecipe.description || '';
+  document.getElementById('newPassword').value = currentRecipe.password || '';
   document.getElementById('newMainIngredient').value = currentRecipe.main_ingredient || '';
   document.getElementById('newStatus').value = currentRecipe.status || 'standby';
   document.getElementById('newGenre').value = currentRecipe.genre || 'main';
@@ -596,6 +604,7 @@ async function saveRecipe() {
     description: document.getElementById('newDesc').value.trim(),
     servings: newServing,
     visibility: selectedVis,
+    password: document.getElementById('newPassword').value.trim() || null,
     status: document.getElementById('newStatus').value,
     genre: document.getElementById('newGenre').value,
     main_ingredient: document.getElementById('newMainIngredient').value.trim(),
