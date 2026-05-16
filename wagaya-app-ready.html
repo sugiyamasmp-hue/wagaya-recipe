@@ -510,7 +510,7 @@ function resetForm() {
   document.getElementById('photoInput').addEventListener('change', handlePhotoChange);
   document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
   document.querySelector('.vis-option').classList.add('selected');
-  newServing = 2; stepCount = 0; selectedVis = 'private'; uploadedFile = null; editingId = null;
+  newServing = 2; stepCount = 0; selectedVis = 'private'; uploadedFile = null;
   document.getElementById('newServingNum').textContent = '2';
   addIngredientRow(); addIngredientRow();
   addStepRow();
@@ -538,10 +538,11 @@ function openNewRecipeForm() {
 
 async function editCurrentRecipe() {
   if (!currentRecipe) return;
-  editingId = currentRecipe.id;
+  const savedId = currentRecipe.id;
   document.getElementById('formTitle').textContent = 'レシピを編集';
   document.getElementById('saveBtn').textContent = '✏️ 更新する';
   resetForm();
+  editingId = savedId;
 
   document.getElementById('newTitle').value = currentRecipe.title || '';
   document.getElementById('newDesc').value = currentRecipe.description || '';
