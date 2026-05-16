@@ -478,12 +478,9 @@ function changeServing(d) { currentServing = Math.max(1, currentServing+d); rend
 
 function shareCurrentRecipe() {
   if (!currentRecipe) return;
-  alert(`📤 このレシピを贈る
-
-レシピID: ${currentRecipe.id}
-パスワード: ${currentRecipe.password||'（未設定）'}
-
-LINEやメールで送ってください！`);
+  document.getElementById('shareId').value = currentRecipe.id;
+  document.getElementById('sharePassword').value = currentRecipe.password || '（未設定）';
+  document.getElementById('shareModal').classList.add('open');
 }
 
 async function deleteCurrentRecipe() {
