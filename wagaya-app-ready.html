@@ -228,6 +228,38 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
   </div>
 </div>
 
+<!-- 贈るモーダル -->
+<div class="modal-overlay" id="shareModal" onclick="closeModal('shareModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:6px">📤 このレシピを贈る</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px">以下のIDとパスワードをLINEやメールで送ってください</p>
+    
+    <div style="margin-bottom:16px">
+      <label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">レシピID</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="shareId" type="text" class="input-field" readonly style="background:#f9f9f9;font-size:12px">
+        <button onclick="copyText('shareId')" style="padding:10px 14px;background:var(--warm);border:none;border-radius:10px;cursor:pointer;font-size:12px;white-space:nowrap">コピー</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:24px">
+      <label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">パスワード</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="sharePassword" type="text" class="input-field" readonly style="background:#f9f9f9">
+        <button onclick="copyText('sharePassword')" style="padding:10px 14px;background:var(--warm);border:none;border-radius:10px;cursor:pointer;font-size:12px;white-space:nowrap">コピー</button>
+      </div>
+    </div>
+
+    <div style="background:#fff5ef;border-radius:12px;padding:14px;margin-bottom:20px;font-size:12px;color:var(--muted);line-height:1.8">
+      受け取った人は「我が家のレシピ」アプリの<br>
+      📥 インポートボタンからレシピを受け取れます
+    </div>
+
+    <button class="btn btn-secondary" onclick="closeModal('shareModal')" style="width:100%">閉じる</button>
+  </div>
+</div>
+
 <!-- インポートモーダル -->
 <div class="modal-overlay" id="importModal" onclick="closeModal('importModal')">
   <div class="modal" onclick="event.stopPropagation()">
