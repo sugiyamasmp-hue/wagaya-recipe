@@ -78,7 +78,7 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
     <h1 style="font-family:'Noto Serif JP',serif;font-size:20px;color:var(--warm);margin:0">我が家のレシピ<span style="font-size:11px;display:block;color:var(--muted);font-family:'Noto Sans JP',sans-serif;font-weight:300">wagaya no recipe</span></h1>
     <div style="display:flex;gap:16px">
       <button id="importBtn" style="background:none;border:none;color:var(--warm);font-size:20px;cursor:pointer">📥</button>
-      <button id="profileBtn" style="background:none;border:none;color:var(--warm);font-size:20px;cursor:pointer">👤</button>
+      <button onclick="openProfileModal()" style="background:none;border:none;color:var(--warm);font-size:20px;cursor:pointer">👤</button>
     </div>
   </div>
   <div style="background:var(--card);display:flex;border-bottom:2px solid var(--warm)">
@@ -279,27 +279,6 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
 </div>
 
 <!-- プロフィールモーダル -->
-<div class="modal-overlay" id="profileModal" onclick="closeModal('profileModal')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:20px">👤 プロフィール</h2>
-    <div style="margin-bottom:14px">
-      <label class="form-label">メールアドレス</label>
-      <div id="profileEmail" style="padding:12px 14px;background:#f9f9f9;border-radius:10px;font-size:13px;color:var(--muted)"></div>
-    </div>
-    <div style="margin-bottom:20px">
-      <label class="form-label">ニックネーム</label>
-      <input id="nicknameInput" type="text" placeholder="例：amadopapa" class="input-field">
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">レシピ広場で表示される名前です</div>
-    </div>
-    <div style="display:flex;gap:10px;margin-bottom:10px">
-      <button class="btn btn-secondary" onclick="closeModal('profileModal')">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveProfile()">保存する</button>
-    </div>
-    <button class="btn btn-secondary" onclick="logout()" style="width:100%;margin-top:8px">🚪 ログアウト</button>
-  </div>
-</div>
-
 <!-- インポートモーダル -->
 <div class="modal-overlay" id="importModal" onclick="closeModal('importModal')">
   <div class="modal" onclick="event.stopPropagation()">
@@ -375,13 +354,9 @@ document.getElementById('signupBtn').addEventListener('click', async () => {
   else { document.getElementById('authMsg').innerHTML = '<span style="color:#4a7c59">✅ 登録完了！ログインしてください</span>'; showAuthTab('login'); }
 });
 
-document.getElementById('logoutBtn').addEventListener('click', () => openProfileModal());
+
 document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importModal').classList.add('open'));
-document.getElementById('profileBtn').addEventListener('click', () => {
-  document.getElementById('profileEmail').textContent = currentUser.email;
-  document.getElementById('nicknameInput').value = currentNickname;
-  document.getElementById('profileModal').classList.add('open');
-});
+
 document.getElementById('fabBtn').addEventListener('click', () => openNewRecipeForm());
 document.getElementById('searchInput').addEventListener('input', () => {
   const q = document.getElementById('searchInput').value.toLowerCase();
@@ -768,6 +743,13 @@ async function importRecipe() {
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openProfileModal() {
+  if (!currentUser) return;
+  document.getElementById('profileEmail').textContent = currentUser.email;
+  document.getElementById('nicknameInput').value = currentNickname || '';
+  document.getElementById('profileModal').classList.add('open');
+}
 
 async function openProfileModal() {
   // 既存のニックネームを取得
