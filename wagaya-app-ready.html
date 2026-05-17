@@ -265,20 +265,24 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
 <div class="modal-overlay" id="profileModal" onclick="closeModal('profileModal')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
-    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:20px">👤 プロフィール設定</h2>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:20px">👤 プロフィール</h2>
     <div style="margin-bottom:14px">
+      <label class="form-label">メールアドレス</label>
+      <div id="profileEmail" style="padding:12px 14px;background:#f9f9f9;border-radius:10px;font-size:13px;color:var(--muted)"></div>
+    </div>
+    <div style="margin-bottom:20px">
       <label class="form-label">ニックネーム</label>
       <input id="nicknameInput" type="text" placeholder="例：amadopapa" class="input-field">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">レシピ広場で表示される名前です</div>
     </div>
-    <div id="profileMsg" style="font-size:12px;text-align:center;margin-top:10px"></div>
-    <div style="display:flex;gap:10px;margin-top:20px">
+    <div style="display:flex;gap:10px;margin-bottom:10px">
       <button class="btn btn-secondary" onclick="closeModal('profileModal')">キャンセル</button>
       <button class="btn btn-primary" onclick="saveProfile()">保存する</button>
     </div>
+    <button onclick="sb.auth.signOut()" style="width:100%;padding:13px;background:#fde8dc;border:none;border-radius:12px;color:#e53e3e;font-size:13px;cursor:pointer;margin-top:8px">🚪 ログアウト</button>
   </div>
 </div>
 
-<!-- プロフィールモーダル -->
 <!-- インポートモーダル -->
 <div class="modal-overlay" id="importModal" onclick="closeModal('importModal')">
   <div class="modal" onclick="event.stopPropagation()">
