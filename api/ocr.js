@@ -1,9 +1,7 @@
-import sharp from 'sharp';
-
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '20mb',
+      sizeLimit: '5mb',
     },
   },
 };
@@ -28,14 +26,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '画像データがありません' });
     }
 
-    // サーバー側で長辺1200px以下にリサイズ・JPEG圧縮
-    const inputBuffer = Buffer.from(imageData, 'base64');
-    const resizedBuffer = await sharp(inputBuffer)
-      .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-    const processedImageData = resizedBuffer.toString('base64');
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -51,7 +41,7 @@ export default async function handler(req, res) {
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: 'image/jpeg', data: processedImageData }
+              source: { type: 'base64', media_type: 'image/jpeg', data: imageData }
             },
             {
               type: 'text',
