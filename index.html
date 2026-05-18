@@ -324,13 +324,12 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
   <div class="ocr-box">
     <div id="ocrUploadView">
       <h3>📸 写真から自動入力</h3>
-      <p>レシピ本・ノート・メモを<br>撮影してください。<br>AIが材料と手順を読み取ります。</p>
-      <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" onclick="document.getElementById('ocrFileInputCamera').click()" style="flex:1;padding:14px 8px;font-size:13px;border-radius:12px">📷<br><span style="font-size:11px">撮影する</span></button>
-        <button class="btn btn-secondary" onclick="document.getElementById('ocrFileInputLibrary').click()" style="flex:1;padding:14px 8px;font-size:13px;border-radius:12px">🖼️<br><span style="font-size:11px">ライブラリ</span></button>
+      <p>レシピ本・ノート・メモの写真を<br>選んでください。<br>AIが材料と手順を読み取ります。</p>
+      <div class="ocr-upload-area" onclick="document.getElementById('ocrFileInput').click()">
+        <div class="ocr-upload-icon">📷</div>
+        <div class="ocr-upload-text">タップして写真を選択</div>
       </div>
-      <input type="file" id="ocrFileInputCamera" accept="image/*" capture="environment" style="display:none" onchange="handleOcrImage(event)">
-      <input type="file" id="ocrFileInputLibrary" accept="image/*" style="display:none" onchange="handleOcrImage(event)">
+      <input type="file" id="ocrFileInput" accept="image/*" style="display:none" onchange="handleOcrImage(event)">
       <button class="ocr-cancel" onclick="closeOcr()">キャンセル</button>
     </div>
     <div class="ocr-analyzing" id="ocrAnalyzing">
@@ -714,8 +713,8 @@ async function handleOcrImage(event) {
   document.getElementById('ocrAnalyzing').style.display = 'block';
 
   try {
-    // Canvas で長辺1200px以下にリサイズしてbase64化（送信前圧縮）
-    const base64 = await resizeImageForOcr(file, 1200);
+    // Canvas で長辺800px以下・1MB以内にリサイズしてbase64化
+    const base64 = await resizeImageForOcr(file, 800);
 
     // Vercelサーバーレス関数に送信
     const response = await fetch('/api/ocr', {
@@ -800,7 +799,16 @@ function resizeImageForOcr(file, maxSize) {
       canvas.width = w;
       canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      // 1MB以下になるまで品質を段階的に下げる
+      const MAX_BYTES = 1024 * 1024;
+      let quality = 0.85;
+      let b64;
+      do {
+        b64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+        if (b64.length * 0.75 <= MAX_BYTES) break;
+        quality -= 0.15;
+      } while (quality > 0.1);
+      resolve(b64);
     };
     img.onerror = reject;
     img.src = objectUrl;
