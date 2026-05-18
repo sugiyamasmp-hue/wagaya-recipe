@@ -325,11 +325,12 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
     <div id="ocrUploadView">
       <h3>📸 写真から自動入力</h3>
       <p>レシピ本・ノート・メモを<br>撮影してください。<br>AIが材料と手順を読み取ります。</p>
-      <div class="ocr-upload-area" onclick="document.getElementById('ocrFileInput').click()">
-        <div class="ocr-upload-icon">📷</div>
-        <div class="ocr-upload-text">タップして写真を選択</div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn btn-secondary" onclick="document.getElementById('ocrFileInputCamera').click()" style="flex:1;padding:14px 8px;font-size:13px;border-radius:12px">📷<br><span style="font-size:11px">撮影する</span></button>
+        <button class="btn btn-secondary" onclick="document.getElementById('ocrFileInputLibrary').click()" style="flex:1;padding:14px 8px;font-size:13px;border-radius:12px">🖼️<br><span style="font-size:11px">ライブラリ</span></button>
       </div>
-      <input type="file" id="ocrFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleOcrImage(event)">
+      <input type="file" id="ocrFileInputCamera" accept="image/*" capture="environment" style="display:none" onchange="handleOcrImage(event)">
+      <input type="file" id="ocrFileInputLibrary" accept="image/*" style="display:none" onchange="handleOcrImage(event)">
       <button class="ocr-cancel" onclick="closeOcr()">キャンセル</button>
     </div>
     <div class="ocr-analyzing" id="ocrAnalyzing">
@@ -713,22 +714,20 @@ async function handleOcrImage(event) {
   document.getElementById('ocrAnalyzing').style.display = 'block';
 
   try {
-    // base64変換
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    // Canvas で長辺1200px以下にリサイズしてbase64化（送信前圧縮）
+    const base64 = await resizeImageForOcr(file, 1200);
 
     // Vercelサーバーレス関数に送信
     const response = await fetch('/api/ocr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageData: base64, mediaType: file.type })
+      body: JSON.stringify({ imageData: base64, mediaType: 'image/jpeg' })
     });
 
-    if (!response.ok) throw new Error('サーバーエラー');
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || 'サーバーエラー');
+    }
     const recipe = await response.json();
 
     if (recipe.error) {
@@ -779,10 +778,33 @@ async function handleOcrImage(event) {
 
   } catch(err) {
     console.error(err);
-    alert('読み取りに失敗しました。もう一度試してください。');
-    closeOcr();
+    alert(err.message || '読み取りに失敗しました。もう一度試してください。');
+    document.getElementById('ocrUploadView').style.display = 'block';
+    document.getElementById('ocrAnalyzing').style.display = 'none';
     event.target.value = '';
   }
+}
+
+function resizeImageForOcr(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxSize || h > maxSize) {
+        if (w >= h) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+    };
+    img.onerror = reject;
+    img.src = objectUrl;
+  });
 }
 
 document.addEventListener('click', e => {

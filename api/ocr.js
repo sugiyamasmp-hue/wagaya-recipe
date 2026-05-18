@@ -1,3 +1,5 @@
+import sharp from 'sharp';
+
 export const config = {
   api: {
     bodyParser: {
@@ -7,7 +9,6 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // CORSヘッダー
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -27,11 +28,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '画像データがありません' });
     }
 
-    // base64サイズをバイト換算してチェック（Claude APIの上限は約5MB）
-    const approxBytes = (imageData.length * 3) / 4;
-    if (approxBytes > 5 * 1024 * 1024) {
-      return res.status(413).json({ error: '画像が大きすぎます。5MB以下の画像を使用してください。' });
-    }
+    // サーバー側で長辺1200px以下にリサイズ・JPEG圧縮
+    const inputBuffer = Buffer.from(imageData, 'base64');
+    const resizedBuffer = await sharp(inputBuffer)
+      .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    const processedImageData = resizedBuffer.toString('base64');
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -48,7 +51,7 @@ export default async function handler(req, res) {
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: imageData }
+              source: { type: 'base64', media_type: 'image/jpeg', data: processedImageData }
             },
             {
               type: 'text',
