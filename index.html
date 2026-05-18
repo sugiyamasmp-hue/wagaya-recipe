@@ -721,47 +721,22 @@ async function handleOcrImage(event) {
       reader.readAsDataURL(file);
     });
 
-    // Claude APIに送信
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Vercelサーバーレス関数に送信
+    const response = await fetch('/api/ocr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: file.type, data: base64 }
-            },
-            {
-              type: 'text',
-              text: `この画像からレシピを読み取って、必ずJSON形式のみで返してください。前置きや説明は不要です。
-{
-  "title": "料理名",
-  "description": "一言メモ",
-  "servings": 2,
-  "ingredients": [
-    {"name": "材料名", "amount": "分量"}
-  ],
-  "steps": [
-    {"type": "prep", "content": "手順"},
-    {"type": "cook", "content": "手順"},
-    {"type": "plate", "content": "手順"}
-  ]
-}
-typeはprep（仕込み）、cook（調理）、plate（盛り付け）のどれかを判断して入れてください。`
-            }
-          ]
-        }]
-      })
+      body: JSON.stringify({ imageData: base64, mediaType: file.type })
     });
 
-    const data = await response.json();
-    const text = data.content.map(c => c.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const recipe = JSON.parse(clean);
+    if (!response.ok) throw new Error('サーバーエラー');
+    const recipe = await response.json();
+
+    if (recipe.error) {
+      alert('レシピを読み取れませんでした。別の写真を試してください。');
+      closeOcr();
+      event.target.value = '';
+      return;
+    }
 
     // フォームに流し込む
     if (recipe.title) document.getElementById('newTitle').value = recipe.title;
