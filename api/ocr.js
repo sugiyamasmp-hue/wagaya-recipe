@@ -1,3 +1,11 @@
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   // CORSヘッダー
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,6 +25,12 @@ export default async function handler(req, res) {
 
     if (!imageData || !mediaType) {
       return res.status(400).json({ error: '画像データがありません' });
+    }
+
+    // base64サイズをバイト換算してチェック（Claude APIの上限は約5MB）
+    const approxBytes = (imageData.length * 3) / 4;
+    if (approxBytes > 5 * 1024 * 1024) {
+      return res.status(413).json({ error: '画像が大きすぎます。5MB以下の画像を使用してください。' });
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
