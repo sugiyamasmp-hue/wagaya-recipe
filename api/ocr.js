@@ -20,6 +20,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY is not set in environment variables');
+      return res.status(500).json({ error: 'APIキーが設定されていません' });
+    }
+
     const { imageData, mediaType } = req.body;
 
     if (!imageData || !mediaType) {
@@ -30,7 +36,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
@@ -69,8 +75,9 @@ typeはprep（仕込み）、cook（調理）、plate（盛り付け）のどれ
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Claude API error:', data);
-      return res.status(500).json({ error: 'AI処理に失敗しました' });
+      console.error('Claude API error status:', response.status);
+      console.error('Claude API error body:', JSON.stringify(data));
+      return res.status(500).json({ error: 'AI処理に失敗しました', detail: data?.error?.type });
     }
 
     const text = data.content.map(c => c.text || '').join('');
