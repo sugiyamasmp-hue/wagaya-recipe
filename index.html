@@ -183,7 +183,8 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
   <main>
     <div class="search-bar">
       <span>🔍</span>
-      <input type="text" placeholder="レシピを検索..." id="searchInput" oninput="filterRecipes()">
+      <input type="text" placeholder="レシピ名を検索..." id="searchInput" oninput="filterRecipes()">
+      <button onclick="openIngredientSearch()" style="background:var(--accent);border:none;border-radius:12px;padding:5px 10px;color:white;font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;white-space:nowrap">🥬 食材から</button>
     </div>
     <div id="tab-my">
 
@@ -355,6 +356,59 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
     <div class="ocr-analyzing" id="ocrAnalyzing">
       <span class="ocr-spinner">🔍</span>
       <div class="ocr-analyzing-text">AIがレシピを読み取っています...<br>少々お待ちください</div>
+    </div>
+  </div>
+</div>
+
+<!-- 食材検索モーダル -->
+<div class="modal-overlay" id="ingredientSearchModal" onclick="closeModal('ingredientSearchModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:6px">🥬 食材からレシピを探す</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">食材を入力して検索できます</p>
+
+    <!-- 検索モード切替 -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="modeMainBtn" onclick="setSearchMode('main')" style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:white;font-size:12px;font-family:'Noto Sans JP',sans-serif;font-weight:500;cursor:pointer">
+        ⭐️ メイン食材で検索
+      </button>
+      <button id="modeAllBtn" onclick="setSearchMode('all')" style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--warm);background:white;color:var(--muted);font-size:12px;font-family:'Noto Sans JP',sans-serif;font-weight:500;cursor:pointer">
+        🔎 全食材で検索
+      </button>
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px" id="searchModeDesc">
+      ⭐️ メイン食材：レシピの主役となる食材（鶏肉・豚肉など）で絞り込みます
+    </div>
+
+    <!-- 食材入力 -->
+    <div style="margin-bottom:12px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="input-field" type="text" id="ingredientInput" placeholder="例：鶏肉、キャベツ" style="flex:1" onkeydown="if(event.key==='Enter')addIngredientTag()">
+        <button onclick="addIngredientTag()" style="padding:10px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-size:13px;cursor:pointer">追加</button>
+      </div>
+      <div id="ingredientTags" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px"></div>
+    </div>
+
+    <!-- よく使う食材 -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">よく使う食材：</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${['鶏肉','豚肉','牛肉','卵','豆腐','キャベツ','玉ねぎ','にんじん','じゃがいも','大根','きのこ'].map(f => 
+          `<button onclick="quickAddIngredient('${f}')" style="padding:4px 12px;border-radius:14px;border:1.5px solid var(--warm);background:white;font-size:12px;color:var(--brown);cursor:pointer;font-family:'Noto Sans JP',sans-serif">${f}</button>`
+        ).join('')}
+      </div>
+    </div>
+
+    <!-- 検索結果 -->
+    <div id="ingredientSearchResults" style="display:none">
+      <div style="font-family:'Noto Serif JP',serif;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--warm)">検索結果</div>
+      <div id="ingredientResultGrid" class="recipe-grid"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('ingredientSearchModal')">閉じる</button>
+      <button class="btn btn-primary" onclick="searchByIngredients()">🔍 検索する</button>
     </div>
   </div>
 </div>
@@ -632,7 +686,17 @@ function addNewIngredient() {
   const div = document.createElement('div');
   div.className = 'ingredient-row';
   div.style.flexWrap = 'wrap';
-  div.innerHTML = `<div style="display:flex;gap:6px;width:100%;align-items:center"><input class="input-field" type="text" placeholder="材料名" style="flex:2"><input class="input-field" type="number" placeholder="量" style="flex:1"><select class="unit-select"><option value="g">g</option><option value="ml">ml</option><option value="個">個</option><option value="本">本</option><option value="枚">枚</option><option value="大さじ">大さじ</option><option value="小さじ">小さじ</option><option value="適量">適量</option></select><button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button></div><input class="input-field" type="text" placeholder="メモ（例：大さじ1）" style="width:100%;margin-top:4px;font-size:12px">`;
+  div.innerHTML = `<div style="display:flex;gap:6px;width:100%;align-items:center">
+    <input class="input-field" type="text" placeholder="材料名" style="flex:2">
+    <input class="input-field" type="number" placeholder="量" style="flex:1">
+    <select class="unit-select"><option value="g">g</option><option value="ml">ml</option><option value="個">個</option><option value="本">本</option><option value="枚">枚</option><option value="大さじ">大さじ</option><option value="小さじ">小さじ</option><option value="適量">適量</option></select>
+    <button class="del-btn" onclick="this.closest('.ingredient-row').remove()">×</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+    <input type="checkbox" class="is-main-check" style="width:14px;height:14px;cursor:pointer">
+    <label style="font-size:11px;color:var(--muted);cursor:pointer">⭐️ メイン食材</label>
+    <input class="input-field" type="text" placeholder="メモ（例：大さじ1）" style="flex:1;font-size:12px">
+  </div>`;
   document.getElementById('newIngredients').appendChild(div);
 }
 
@@ -664,10 +728,19 @@ async function saveRecipe() {
   if (error) { alert('保存に失敗しました'); return; }
   const ings = [];
   document.querySelectorAll('#newIngredients .ingredient-row').forEach((row,i) => {
-    const inputs = row.querySelectorAll('input');
+    const inputs = row.querySelectorAll('input[type="text"], input[type="number"]');
     const select = row.querySelector('select');
+    const isMainCheck = row.querySelector('.is-main-check');
     const name = inputs[0].value.trim();
-    const memoInput = row.querySelectorAll('input')[2]; if (name) ings.push({ recipe_id: recipe.id, name, amount: parseFloat(inputs[1].value)||null, unit: select ? select.value : 'g', memo: memoInput ? memoInput.value.trim() : '', order_num: i });
+    if (name) ings.push({
+      recipe_id: recipe.id,
+      name,
+      amount: parseFloat(inputs[1].value)||null,
+      unit: select ? select.value : 'g',
+      memo: inputs[2] ? inputs[2].value.trim() : '',
+      is_main: isMainCheck ? isMainCheck.checked : false,
+      order_num: i
+    });
   });
   if (ings.length) await sb.from('ingredients').insert(ings);
   const stps = [];
@@ -860,6 +933,159 @@ document.addEventListener('click', e => {
   const menu = document.getElementById('userMenu');
   if (menu.classList.contains('open') && !menu.contains(e.target) && !e.target.closest('.icon-btn')) menu.classList.remove('open');
 });
+
+// ======== 食材検索機能 ========
+let searchMode = 'main';
+let ingredientTags = [];
+
+function openIngredientSearch() {
+  ingredientTags = [];
+  renderIngredientTags();
+  document.getElementById('ingredientSearchResults').style.display = 'none';
+  document.getElementById('ingredientResultGrid').innerHTML = '';
+  document.getElementById('ingredientInput').value = '';
+  document.getElementById('ingredientSearchModal').classList.add('open');
+}
+
+function setSearchMode(mode) {
+  searchMode = mode;
+  const mainBtn = document.getElementById('modeMainBtn');
+  const allBtn = document.getElementById('modeAllBtn');
+  const desc = document.getElementById('searchModeDesc');
+
+  if (mode === 'main') {
+    mainBtn.style.background = 'var(--accent)';
+    mainBtn.style.borderColor = 'var(--accent)';
+    mainBtn.style.color = 'white';
+    allBtn.style.background = 'white';
+    allBtn.style.borderColor = 'var(--warm)';
+    allBtn.style.color = 'var(--muted)';
+    desc.textContent = '⭐️ メイン食材：レシピの主役となる食材（鶏肉・豚肉など）で絞り込みます';
+  } else {
+    allBtn.style.background = 'var(--accent)';
+    allBtn.style.borderColor = 'var(--accent)';
+    allBtn.style.color = 'white';
+    mainBtn.style.background = 'white';
+    mainBtn.style.borderColor = 'var(--warm)';
+    mainBtn.style.color = 'var(--muted)';
+    desc.textContent = '🔎 全食材：調味料や薬味も含む全ての食材から検索します';
+  }
+}
+
+function addIngredientTag() {
+  const input = document.getElementById('ingredientInput');
+  const val = input.value.trim();
+  if (!val) return;
+  // カンマ区切りで複数追加
+  val.split(/[,、，]/).forEach(v => {
+    const t = v.trim();
+    if (t && !ingredientTags.includes(t)) ingredientTags.push(t);
+  });
+  input.value = '';
+  renderIngredientTags();
+}
+
+function quickAddIngredient(name) {
+  if (!ingredientTags.includes(name)) {
+    ingredientTags.push(name);
+    renderIngredientTags();
+  }
+}
+
+function removeIngredientTag(name) {
+  ingredientTags = ingredientTags.filter(t => t !== name);
+  renderIngredientTags();
+}
+
+function renderIngredientTags() {
+  const container = document.getElementById('ingredientTags');
+  container.innerHTML = ingredientTags.map(tag => `
+    <div style="display:flex;align-items:center;gap:4px;background:var(--warm);border-radius:14px;padding:4px 10px;">
+      <span style="font-size:12px;color:var(--brown)">${tag}</span>
+      <button onclick="removeIngredientTag('${tag}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0">×</button>
+    </div>
+  `).join('');
+}
+
+async function searchByIngredients() {
+  if (ingredientTags.length === 0) {
+    alert('食材を入力してください');
+    return;
+  }
+
+  const resultsDiv = document.getElementById('ingredientSearchResults');
+  const gridDiv = document.getElementById('ingredientResultGrid');
+  resultsDiv.style.display = 'block';
+  gridDiv.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">検索中...</div></div>';
+
+  try {
+    // 全レシピの材料を取得
+    let query = sb.from('ingredients').select('recipe_id, name, is_main');
+    
+    // メイン食材モードの場合はis_main=trueのみ
+    if (searchMode === 'main') {
+      query = query.eq('is_main', true);
+    }
+
+    const { data: allIngredients } = await query;
+    if (!allIngredients) { gridDiv.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">レシピが見つかりませんでした</div></div>'; return; }
+
+    // レシピIDごとにスコアを計算
+    const scoreMap = {};
+    const matchMap = {};
+
+    for (const ing of allIngredients) {
+      for (const tag of ingredientTags) {
+        // 部分一致で検索（「鶏肉」で「鶏もも肉」もヒット）
+        if (ing.name.includes(tag) || tag.includes(ing.name)) {
+          if (!scoreMap[ing.recipe_id]) { scoreMap[ing.recipe_id] = 0; matchMap[ing.recipe_id] = []; }
+          scoreMap[ing.recipe_id]++;
+          if (!matchMap[ing.recipe_id].includes(tag)) matchMap[ing.recipe_id].push(tag);
+        }
+      }
+    }
+
+    // スコア順にソート
+    const sortedIds = Object.keys(scoreMap).sort((a, b) => scoreMap[b] - scoreMap[a]);
+
+    if (sortedIds.length === 0) {
+      gridDiv.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">該当するレシピが見つかりませんでした<br>別の食材で試してみてください</div></div>';
+      return;
+    }
+
+    // レシピ詳細を取得
+    const { data: recipes } = await sb.from('recipes').select('*').in('id', sortedIds);
+    if (!recipes) return;
+
+    // スコア順に並び替え
+    const sortedRecipes = sortedIds.map(id => recipes.find(r => r.id === id)).filter(Boolean);
+
+    // 表示
+    gridDiv.innerHTML = sortedRecipes.map((r, i) => {
+      const score = scoreMap[r.id];
+      const matched = matchMap[r.id] || [];
+      const total = ingredientTags.length;
+      const pct = Math.round((score / total) * 100);
+      const badge = pct === 100 ? '🥇 完全一致' : pct >= 60 ? '🥈 ほぼ一致' : '🥉 部分一致';
+      const badgeColor = pct === 100 ? '#4a7c59' : pct >= 60 ? '#c0622a' : '#9b7b5a';
+
+      return `<div class="recipe-card" onclick="openRecipe('${r.id}');closeModal('ingredientSearchModal')">
+        <div class="recipe-img">${emojis[i % emojis.length]}</div>
+        <div class="recipe-info">
+          <div class="recipe-name">${r.title}</div>
+          <div class="recipe-meta">
+            <span style="font-size:10px;color:${badgeColor};font-weight:700">${badge}</span>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">一致：${matched.join('・')}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(err) {
+    console.error(err);
+    gridDiv.innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-text">検索に失敗しました</div></div>';
+  }
+}
 
 init();
 </script>
