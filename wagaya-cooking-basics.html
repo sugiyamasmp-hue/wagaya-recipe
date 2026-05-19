@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>料理の基礎｜我が家のレシピ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #fdf6ec;
+    --warm: #f5e6c8;
+    --brown: #5c3d1e;
+    --accent: #c0622a;
+    --muted: #9b7b5a;
+    --green: #4a7c59;
+    --card: #fffdf8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--cream);
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--brown);
+    min-height: 100vh;
+  }
+
+  /* ヘッダー */
+  header {
+    background: var(--brown);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    color: #f2d880;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  header h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 17px;
+    color: #f2d880;
+    flex: 1;
+  }
+
+  header p {
+    font-size: 11px;
+    color: rgba(242,216,128,0.6);
+    font-weight: 300;
+  }
+
+  /* イントロ */
+  .intro {
+    background: linear-gradient(135deg, #3e1e08, #6b3a1f);
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .intro-icon { font-size: 40px; margin-bottom: 10px; }
+
+  .intro-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 18px;
+    color: #f2d880;
+    margin-bottom: 8px;
+  }
+
+  .intro-text {
+    font-size: 12px;
+    color: rgba(242,216,128,0.7);
+    line-height: 1.8;
+  }
+
+  /* カテゴリタブ */
+  .category-tabs {
+    background: var(--card);
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 2px solid var(--warm);
+    gap: 0;
+    padding: 0 4px;
+  }
+
+  .cat-tab {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    transition: all 0.2s;
+  }
+
+  .cat-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* メインコンテンツ */
+  main {
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* セクション */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .section-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 16px;
+    color: var(--brown);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--warm);
+  }
+
+  /* イラストカード */
+  .illust-card {
+    background: var(--card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(92,61,30,0.1);
+    margin-bottom: 16px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .illust-img {
+    width: 100%;
+    display: block;
+    background: var(--warm);
+  }
+
+  .illust-img img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .illust-info {
+    padding: 14px 16px;
+  }
+
+  .illust-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .illust-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .illust-tag {
+    display: inline-block;
+    background: var(--warm);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin-top: 8px;
+    font-weight: 500;
+  }
+
+  .illust-tag.beginner { background: #e8f4ed; color: var(--green); }
+  .illust-tag.important { background: #fde8dc; color: var(--accent); }
+
+  /* ポイントリスト */
+  .point-list {
+    list-style: none;
+    margin-top: 10px;
+  }
+
+  .point-list li {
+    font-size: 12px;
+    color: var(--brown);
+    padding: 5px 0;
+    padding-left: 16px;
+    position: relative;
+    line-height: 1.6;
+  }
+
+  .point-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* 換算表 */
+  .convert-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 10px;
+  }
+
+  .convert-table th {
+    background: var(--brown);
+    color: #f2d880;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  .convert-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--warm);
+  }
+
+  .convert-table tr:nth-child(even) td {
+    background: #fdf6ec;
+  }
+
+  /* 火加減カード */
+  .fire-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .fire-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(92,61,30,0.08);
+  }
+
+  .fire-icon { font-size: 32px; margin-bottom: 8px; }
+
+  .fire-name {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .fire-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .fire-use {
+    font-size: 10px;
+    color: var(--accent);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* フッター */
+  .footer-note {
+    text-align: center;
+    padding: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="back-btn" onclick="history.back()">←</button>
+  <div>
+    <h1>🍳 料理の基礎</h1>
+    <p>料理長監修・初心者向けガイド</p>
+  </div>
+</header>
+
+<!-- イントロ -->
+<div class="intro">
+  <div class="intro-icon">👨‍🍳</div>
+  <div class="intro-title">料理のイロハ、ここにあります</div>
+  <div class="intro-text">
+    包丁の持ち方から火加減まで。<br>
+    レシピの前に知っておきたい基礎を<br>
+    わかりやすいイラストで解説します。
+  </div>
+</div>
+
+<!-- カテゴリタブ -->
+<div class="category-tabs">
+  <button class="cat-tab active" onclick="showSection('knife', this)">🔪 包丁・切り方</button>
+  <button class="cat-tab" onclick="showSection('fire', this)">🔥 火加減</button>
+  <button class="cat-tab" onclick="showSection('measure', this)">🥄 計量</button>
+  <button class="cat-tab" onclick="showSection('board', this)">🪵 まな板</button>
+</div>
+
+<main>
+
+  <!-- 包丁・切り方 -->
+  <div class="section active" id="section-knife">
+    <br>
+    <div class="section-title">🔪 包丁の持ち方・切り方</div>
+
+    <!-- 猫の手・包丁の持ち方 -->
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2239.PNG" alt="猫の手・包丁の持ち方">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">猫の手と包丁の持ち方</div>
+        <div class="illust-desc">指を丸めて「猫の手」を作ることで、包丁が指に当たらず安全に切れます。</div>
+        <span class="illust-tag important">⚠️ 必ず覚える</span>
+        <ul class="point-list">
+          <li>指先を丸めて第二関節を前に出す</li>
+          <li>握り持ち（基本）と差し指持ち（細かい作業）の2種類</li>
+          <li>包丁の根元から先まで使う</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- イチョウ切り -->
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2230.PNG" alt="イチョウ切り">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">イチョウ切り</div>
+        <div class="illust-desc">大根・にんじんなどによく使う切り方。輪切りにしてから半分→さらに半分に切ります。</div>
+        <span class="illust-tag beginner">🌱 初心者向け</span>
+        <ul class="point-list">
+          <li>まず5cmの輪切りにする</li>
+          <li>半分に切る</li>
+          <li>さらに半分に切る（イチョウ型）</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- みじん切り -->
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2232.PNG" alt="みじん切り">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">みじん切り</div>
+        <div class="illust-desc">玉ねぎ・にんにくなどに使う細かい切り方。縦横に切れ目を入れてから薄く切ります。</div>
+        <span class="illust-tag beginner">🌱 初心者向け</span>
+        <ul class="point-list">
+          <li>縦に深く切れ目を入れる</li>
+          <li>横に切れ目を入れる</li>
+          <li>薄く一定の厚さで切る</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 千切り -->
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2233.PNG" alt="千切り">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">千切り</div>
+        <div class="illust-desc">キャベツ・にんじんなどに使う細長い切り方。サラダや炒め物に最適。</div>
+        <span class="illust-tag beginner">🌱 初心者向け</span>
+      </div>
+    </div>
+
+    <!-- 薄切り -->
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2231.PNG" alt="薄切り・際の目切り">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">薄切り（際の目切り）</div>
+        <div class="illust-desc">刺身のつまや飾り切りに使う薄切り。切れ味の良い包丁で一定のリズムで切ります。</div>
+        <span class="illust-tag">🍽️ 応用</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 火加減 -->
+  <div class="section" id="section-fire">
+    <br>
+    <div class="section-title">🔥 火加減の基本</div>
+
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2234.PNG" alt="火加減の意味">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">火加減の意味と使い分け</div>
+        <div class="illust-desc">強火・中火・弱火・とろ火の4段階。料理によって使い分けることで美味しさが格段に変わります。</div>
+        <ul class="point-list">
+          <li>炒め物は強火でスピーディに</li>
+          <li>煮込み料理は中火〜弱火でじっくり</li>
+          <li>卵料理は弱火でやさしく</li>
+          <li>チョコ・バターを溶かすのはとろ火で</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2237.PNG" alt="湯加減">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">わかりやすい湯加減</div>
+        <div class="illust-desc">ふつふつ・煮立ち・ぐつぐつ・沸騰の4段階。茹で料理に欠かせない知識です。</div>
+        <ul class="point-list">
+          <li>ふつふつ → 小さな泡がゆっくり出る</li>
+          <li>煮立ち → 泡が少し大きくなる</li>
+          <li>ぐつぐつ → 大きな泡が出始める</li>
+          <li>沸騰 → 全体が激しく沸く</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fire-grid">
+      <div class="fire-card">
+        <div class="fire-icon">🔥</div>
+        <div class="fire-name">強火</div>
+        <div class="fire-desc">炎が鍋底全体に広がる</div>
+        <div class="fire-use">炒め物・湯沸かし</div>
+      </div>
+      <div class="fire-card">
+        <div class="fire-icon">🟠</div>
+        <div class="fire-name">中火</div>
+        <div class="fire-desc">炎が鍋底に少し当たる</div>
+        <div class="fire-use">煮物・炒め煮</div>
+      </div>
+      <div class="fire-card">
+        <div class="fire-icon">🟡</div>
+        <div class="fire-name">弱火</div>
+        <div class="fire-desc">炎が小さくチロチロ</div>
+        <div class="fire-use">長時間煮込み</div>
+      </div>
+      <div class="fire-card">
+        <div class="fire-icon">🕯️</div>
+        <div class="fire-name">とろ火</div>
+        <div class="fire-desc">ほぼ消えそうな炎</div>
+        <div class="fire-use">温め直し・溶かす</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 計量 -->
+  <div class="section" id="section-measure">
+    <br>
+    <div class="section-title">🥄 計量の基本</div>
+
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2236.PNG" alt="計量スプーンの使い方">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">計量スプーンの正しい使い方</div>
+        <div class="illust-desc">大さじ＝15ml、小さじ＝5ml。粉末と液体で計り方が違います。</div>
+        <span class="illust-tag important">⚠️ 必ず覚える</span>
+        <ul class="point-list">
+          <li>粉末：山盛りにすくってすりきりで平らに</li>
+          <li>液体：縁までなみなみと注ぐ</li>
+          <li>山盛りのままはNG！</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2246.PNG" alt="大さじ小さじグラム換算表">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">大さじ・小さじ グラム換算表</div>
+        <div class="illust-desc">食材によってグラム数が違います。覚えておくと料理がスムーズに。</div>
+      </div>
+    </div>
+
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2245.PNG" alt="電子レンジ加熱時間の計算">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">電子レンジ加熱時間の計算</div>
+        <div class="illust-desc">600Wと500Wの切り替え計算方法。レシピの指定と自分のレンジが違う時に使います。</div>
+        <ul class="point-list">
+          <li>600W→500Wは時間×1.2倍</li>
+          <li>500W→600Wは時間×0.8倍</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- まな板 -->
+  <div class="section" id="section-board">
+    <br>
+    <div class="section-title">🪵 まな板の使い方</div>
+
+    <div class="illust-card">
+      <div class="illust-img">
+        <img src="https://raw.githubusercontent.com/sugiyamasmp-hue/wagaya-recipe/main/images/basics/IMG_2238.PNG" alt="まな板の正しい使い方">
+      </div>
+      <div class="illust-info">
+        <div class="illust-title">まな板の衛生的な使い方</div>
+        <div class="illust-desc">食中毒を防ぐために、切る順番と使い方を守りましょう。</div>
+        <span class="illust-tag important">⚠️ 食中毒予防</span>
+        <ul class="point-list">
+          <li>使う前に水で濡らす（染み込み防止）</li>
+          <li>切る順番：生食・薬味 → 加熱野菜 → 生肉・魚</li>
+          <li>表は野菜・裏は肉・魚で使い分ける</li>
+          <li>生肉・魚は一番最後に切る</li>
+          <li>牛乳パックやシートを活用すると洗い物が楽</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    料理長監修｜我が家のレシピ<br>
+    <small>基礎を身につけたら、レシピに挑戦してみましょう！</small>
+  </div>
+
+</main>
+
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
