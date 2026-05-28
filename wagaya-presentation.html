@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我が家のレシピ — 事業企画書</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700;900&family=Noto+Sans+JP:wght@300;400;500&family=Shippori+Mincho:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#fdf6ec;--warm:#f5e6c8;--brown:#5c3d1e;--accent:#c0622a;
+  --muted:#9b7b5a;--green:#4a7c59;--dark:#1a0c06;--gold:#d4aa46;
+  --card:#fffdf8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--dark);font-family:'Noto Sans JP',sans-serif;color:var(--cream);overflow-x:hidden}
+
+/* ナビ */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(26,12,6,0.95);backdrop-filter:blur(10px);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(212,170,70,0.2)}
+.nav-logo{font-family:'Shippori Mincho',serif;font-size:18px;color:var(--gold)}
+.nav-links{display:flex;gap:24px}
+.nav-links a{font-size:12px;color:rgba(212,170,70,0.6);text-decoration:none;letter-spacing:0.1em;transition:color 0.2s}
+.nav-links a:hover{color:var(--gold)}
+
+/* セクション共通 */
+section{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 24px 80px;position:relative;overflow:hidden}
+.section-num{font-size:11px;letter-spacing:0.4em;color:rgba(212,170,70,0.4);margin-bottom:16px;text-transform:uppercase}
+.section-title{font-family:'Shippori Mincho',serif;font-size:clamp(32px,6vw,56px);font-weight:800;text-align:center;line-height:1.3;margin-bottom:16px}
+.gold-line{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:20px auto}
+.section-desc{font-size:14px;color:rgba(253,246,236,0.6);text-align:center;line-height:2;max-width:600px;margin:0 auto 48px;font-weight:300}
+.max-w{max-width:1000px;width:100%;margin:0 auto}
+
+/* ヒーロー */
+#hero{background:linear-gradient(160deg,#0f0804,#3d1f0a,#1a0c06);text-align:center}
+#hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(192,98,42,0.15),transparent 60%)}
+.hero-emoji{font-size:80px;margin-bottom:24px;display:block;animation:float 4s ease-in-out infinite;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.5))}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+.hero-title{font-family:'Shippori Mincho',serif;font-size:clamp(48px,10vw,80px);font-weight:900;color:var(--gold);line-height:1.2;text-shadow:0 4px 20px rgba(0,0,0,0.5);margin-bottom:16px}
+.hero-catch{font-family:'Shippori Mincho',serif;font-size:clamp(16px,3vw,22px);color:rgba(242,216,128,0.7);line-height:1.9;margin-bottom:12px}
+.hero-sub{font-size:13px;color:rgba(242,216,128,0.4);line-height:2;font-weight:300;margin-bottom:40px}
+.hero-tag{display:inline-block;padding:8px 20px;border:1px solid rgba(212,170,70,0.3);border-radius:20px;font-size:11px;color:rgba(212,170,70,0.6);letter-spacing:0.2em}
+
+/* 背景ストーリー */
+#story{background:var(--cream);color:var(--brown)}
+.story-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;width:100%;max-width:900px}
+.story-card{background:white;border-radius:20px;padding:32px;box-shadow:0 4px 24px rgba(92,61,30,0.1);position:relative;overflow:hidden}
+.story-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.story-card.card1::before{background:linear-gradient(90deg,var(--accent),#e8854a)}
+.story-card.card2::before{background:linear-gradient(90deg,var(--muted),#c4a07a)}
+.story-card.card3::before{background:linear-gradient(90deg,var(--green),#6aad80)}
+.story-icon{font-size:44px;margin-bottom:16px;display:block}
+.story-title{font-family:'Shippori Mincho',serif;font-size:20px;font-weight:700;color:var(--brown);margin-bottom:10px}
+.story-text{font-size:13px;color:var(--muted);line-height:1.9}
+.story-quote{background:var(--warm);border-radius:12px;padding:20px;margin-top:16px;font-family:'Shippori Mincho',serif;font-size:16px;color:var(--brown);line-height:1.8;text-align:center}
+
+/* 比較 */
+#compare{background:linear-gradient(160deg,#1a0c06,#3d1f0a)}
+.compare-table{width:100%;max-width:800px;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.4)}
+.compare-table table{width:100%;border-collapse:collapse}
+.compare-table th{padding:16px 12px;font-size:13px;font-weight:600;letter-spacing:0.05em}
+.compare-table th:first-child{background:rgba(255,255,255,0.05);color:rgba(212,170,70,0.6);text-align:left;padding-left:20px}
+.compare-table th.col-data{background:var(--accent);color:white}
+.compare-table th.col-other{background:rgba(255,255,255,0.05);color:rgba(253,246,236,0.4)}
+.compare-table td{padding:12px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+.compare-table td:first-child{text-align:left;padding-left:20px;color:rgba(253,246,236,0.7)}
+.compare-table td.col-data{background:rgba(192,98,42,0.1);color:#6aad80;font-size:18px}
+.compare-table td.col-other{color:rgba(253,246,236,0.2);font-size:18px}
+.compare-table tr:last-child td{border-bottom:none}
+
+/* 機能 */
+#features{background:var(--cream);color:var(--brown)}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;width:100%;max-width:1000px}
+.feature-card{background:white;border-radius:20px;padding:28px;box-shadow:0 4px 20px rgba(92,61,30,0.08);transition:transform 0.3s}
+.feature-card:hover{transform:translateY(-4px)}
+.feature-icon{font-size:40px;margin-bottom:12px;display:block}
+.feature-title{font-family:'Shippori Mincho',serif;font-size:18px;font-weight:700;color:var(--brown);margin-bottom:8px}
+.feature-desc{font-size:12px;color:var(--muted);line-height:1.8}
+.feature-tag{display:inline-block;font-size:10px;padding:3px 8px;border-radius:8px;background:var(--warm);color:var(--muted);margin-bottom:10px}
+.feature-tag.new{background:#e8f4ed;color:var(--green)}
+.feature-tag.ai{background:#fde8dc;color:var(--accent)}
+
+/* OCR図解 */
+#ocr{background:linear-gradient(160deg,#0f0804,#2a1a0a)}
+.flow-diagram{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;width:100%;max-width:900px}
+.flow-step{background:rgba(255,255,255,0.06);border:1px solid rgba(212,170,70,0.2);border-radius:20px;padding:24px 20px;text-align:center;min-width:160px;flex:1;max-width:180px;transition:all 0.3s}
+.flow-step:hover{background:rgba(192,98,42,0.15);border-color:rgba(192,98,42,0.4);transform:translateY(-4px)}
+.flow-step-icon{font-size:40px;margin-bottom:10px;display:block}
+.flow-step-title{font-family:'Shippori Mincho',serif;font-size:14px;color:var(--gold);margin-bottom:6px}
+.flow-step-desc{font-size:11px;color:rgba(253,246,236,0.5);line-height:1.6}
+.flow-arrow{font-size:24px;color:rgba(212,170,70,0.4);padding:0 8px;flex-shrink:0}
+.flow-highlight{background:linear-gradient(135deg,rgba(192,98,42,0.3),rgba(212,170,70,0.15));border-color:rgba(212,170,70,0.5)}
+
+/* 冷蔵庫検索図解 */
+#fridge{background:var(--cream);color:var(--brown)}
+.fridge-diagram{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;width:100%;max-width:900px}
+.fridge-box{background:white;border-radius:20px;padding:28px;box-shadow:0 4px 20px rgba(92,61,30,0.1)}
+.fridge-title{font-family:'Shippori Mincho',serif;font-size:18px;font-weight:700;color:var(--brown);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.fridge-items{display:flex;flex-direction:column;gap:8px}
+.fridge-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--warm);border-radius:10px;font-size:13px;color:var(--brown)}
+.fridge-arrow{text-align:center}
+.fridge-arrow-icon{font-size:40px;color:var(--accent);display:block;margin-bottom:8px}
+.fridge-arrow-label{font-size:11px;color:var(--muted);text-align:center;line-height:1.6}
+.ai-badge{background:linear-gradient(135deg,var(--accent),#e8854a);color:white;font-size:10px;padding:4px 10px;border-radius:10px;display:inline-block;margin-bottom:8px}
+.recipe-results{display:flex;flex-direction:column;gap:8px}
+.recipe-result{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--warm);border-radius:10px;font-size:13px;color:var(--brown);border-left:3px solid var(--accent)}
+
+/* AI機能 */
+#ai{background:linear-gradient(160deg,#1a0c06,#0f0804)}
+.ai-roadmap{display:flex;flex-direction:column;gap:0;width:100%;max-width:700px}
+.ai-phase{display:flex;gap:20px;align-items:flex-start;padding:20px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.ai-phase:last-child{border-bottom:none}
+.ai-phase-num{width:40px;height:40px;border-radius:50%;background:var(--accent);color:white;font-family:'Shippori Mincho',serif;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-phase-num.future{background:rgba(255,255,255,0.1);color:rgba(253,246,236,0.3)}
+.ai-phase-content{flex:1}
+.ai-phase-title{font-family:'Shippori Mincho',serif;font-size:16px;color:var(--gold);margin-bottom:4px}
+.ai-phase-desc{font-size:12px;color:rgba(253,246,236,0.5);line-height:1.7}
+.ai-phase-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(192,98,42,0.3);color:rgba(242,216,128,0.7);display:inline-block;margin-bottom:6px}
+
+/* ビジネスモデル */
+#business{background:var(--cream);color:var(--brown)}
+.business-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;width:100%;max-width:1000px;margin-bottom:40px}
+.plan-card{border-radius:20px;padding:28px;text-align:center;transition:transform 0.3s}
+.plan-card:hover{transform:translateY(-4px)}
+.plan-free{background:white;box-shadow:0 4px 20px rgba(92,61,30,0.08)}
+.plan-premium{background:linear-gradient(135deg,#5c3d1e,#3d1f0a);color:#f2d880}
+.plan-business{background:linear-gradient(135deg,var(--accent),#8a3d18);color:white}
+.plan-enterprise{background:linear-gradient(135deg,#2a1a0a,#1a0c06);color:#f2d880;border:1px solid rgba(212,170,70,0.3)}
+.plan-icon{font-size:36px;margin-bottom:12px;display:block}
+.plan-name{font-family:'Shippori Mincho',serif;font-size:18px;font-weight:700;margin-bottom:6px}
+.plan-price{font-size:24px;font-weight:700;margin-bottom:12px;font-family:'Shippori Mincho',serif}
+.plan-price span{font-size:13px;font-weight:400}
+.plan-features{list-style:none;text-align:left}
+.plan-features li{font-size:12px;padding:4px 0;display:flex;align-items:center;gap:6px;line-height:1.5;opacity:0.8}
+.plan-features li::before{content:'✓';flex-shrink:0;font-weight:700}
+
+/* セキュリティ */
+#security{background:linear-gradient(160deg,#0f0804,#2a1a0a)}
+.security-compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:800px}
+.sec-box{border-radius:20px;padding:28px}
+.sec-bad{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)}
+.sec-good{background:rgba(192,98,42,0.15);border:1px solid rgba(192,98,42,0.3)}
+.sec-title{font-family:'Shippori Mincho',serif;font-size:18px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.sec-flow{display:flex;flex-direction:column;gap:8px}
+.sec-step{padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.6}
+.sec-step.bad{background:rgba(229,62,62,0.1);color:rgba(253,246,236,0.6);border-left:3px solid rgba(229,62,62,0.4)}
+.sec-step.good{background:rgba(74,124,89,0.15);color:rgba(253,246,236,0.8);border-left:3px solid var(--green)}
+.sec-arrow{text-align:center;color:rgba(253,246,236,0.2);font-size:16px;padding:2px 0}
+
+/* BtoB */
+#btob{background:var(--cream);color:var(--brown)}
+.btob-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;width:100%;max-width:1000px}
+.btob-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(92,61,30,0.08);transition:all 0.3s;border-top:3px solid var(--accent)}
+.btob-card:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(92,61,30,0.15)}
+.btob-icon{font-size:36px;margin-bottom:10px;display:block}
+.btob-title{font-family:'Shippori Mincho',serif;font-size:16px;font-weight:700;color:var(--brown);margin-bottom:6px}
+.btob-desc{font-size:12px;color:var(--muted);line-height:1.7}
+.btob-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:#fde8dc;color:var(--accent);display:inline-block;margin-bottom:8px}
+
+/* ロードマップ */
+#roadmap{background:linear-gradient(160deg,#1a0c06,#0f0804)}
+.roadmap{display:flex;flex-direction:column;gap:0;width:100%;max-width:700px}
+.roadmap-item{display:flex;gap:20px;align-items:flex-start;padding:20px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.roadmap-item:last-child{border-bottom:none}
+.roadmap-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.roadmap-dot.done{background:var(--green)}
+.roadmap-dot.active{background:var(--accent);box-shadow:0 0 12px rgba(192,98,42,0.6)}
+.roadmap-dot.future{background:rgba(255,255,255,0.15)}
+.roadmap-line{width:2px;background:rgba(255,255,255,0.08);flex-shrink:0;margin-top:4px}
+.roadmap-content{flex:1}
+.roadmap-phase{font-size:10px;color:rgba(212,170,70,0.5);letter-spacing:0.2em;margin-bottom:4px}
+.roadmap-title{font-family:'Shippori Mincho',serif;font-size:16px;color:var(--gold);margin-bottom:4px}
+.roadmap-items{font-size:12px;color:rgba(253,246,236,0.5);line-height:1.8}
+
+/* CTA */
+#cta{background:linear-gradient(160deg,#2a1a0a,#0f0804);text-align:center}
+.cta-title{font-family:'Shippori Mincho',serif;font-size:clamp(28px,6vw,52px);font-weight:800;color:var(--gold);line-height:1.5;margin-bottom:16px}
+.cta-sub{font-size:14px;color:rgba(242,216,128,0.5);line-height:2;margin-bottom:40px}
+.cta-btn{display:inline-block;padding:16px 48px;background:var(--accent);border:none;border-radius:40px;color:white;font-family:'Shippori Mincho',serif;font-size:16px;letter-spacing:0.15em;text-decoration:none;box-shadow:0 8px 40px rgba(192,98,42,0.5);transition:transform 0.2s}
+.cta-btn:hover{transform:translateY(-3px)}
+.profile-box{background:rgba(255,255,255,0.05);border:1px solid rgba(212,170,70,0.2);border-radius:20px;padding:28px;max-width:500px;margin:40px auto 0;text-align:left}
+.profile-name{font-family:'Shippori Mincho',serif;font-size:20px;color:var(--gold);margin-bottom:8px}
+.profile-title{font-size:12px;color:rgba(212,170,70,0.6);margin-bottom:12px;letter-spacing:0.1em}
+.profile-text{font-size:13px;color:rgba(253,246,236,0.6);line-height:1.9}
+
+/* アニメーション */
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:600px){
+  .fridge-diagram{grid-template-columns:1fr}
+  .security-compare{grid-template-columns:1fr}
+  .flow-diagram{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">🍲 我が家のレシピ</div>
+  <div class="nav-links">
+    <a href="#story">背景</a>
+    <a href="#features">機能</a>
+    <a href="#ocr">OCR</a>
+    <a href="#fridge">冷蔵庫検索</a>
+    <a href="#ai">AI</a>
+    <a href="#business">ビジネス</a>
+    <a href="#roadmap">計画</a>
+  </div>
+</nav>
+
+<!-- ヒーロー -->
+<section id="hero">
+  <span class="hero-emoji">🍲</span>
+  <p class="section-num fade-in">WAGAYA NO RECIPE — 事業企画書</p>
+  <h1 class="hero-title fade-in">我が家の<br>レシピ</h1>
+  <div class="gold-line fade-in"></div>
+  <p class="hero-catch fade-in">「顔がある、レシピ。引き継いで、進化していく。」</p>
+  <p class="hero-sub fade-in">
+    紙にもPDFにもできない。データだから、レシピが生きている。<br>
+    田舎のお母さんに電話して、「あの味」を送ってもらえる。
+  </p>
+  <span class="hero-tag fade-in">amadopapa（杉山浩之）／ 2026</span>
+</section>
+
+<!-- 背景ストーリー -->
+<section id="story">
+  <p class="section-num fade-in">01 — STORY</p>
+  <h2 class="section-title fade-in" style="color:var(--brown)">開発の原点</h2>
+  <div class="gold-line fade-in"></div>
+  <div class="story-cards fade-in">
+    <div class="story-card card1">
+      <span class="story-icon">👴</span>
+      <div class="story-title">父の介護、そして喪失</div>
+      <div class="story-text">父親の介護をしていた時代、毎日料理を作り続けた。しかしその時のレシピは今、手元にない。</div>
+      <div class="story-quote">「あの味を、残しておきたかった。」</div>
+    </div>
+    <div class="story-card card2">
+      <span class="story-icon">🏥</span>
+      <div class="story-title">脳卒中、車椅子生活へ</div>
+      <div class="story-text">東京スンドゥブ創業者・総料理長として活躍後、脳卒中で半身麻痺（障害者1級）。包丁をペンに持ち替えた。</div>
+      <div class="story-quote">「包丁をペンに持ち替え、アプリを作った。」</div>
+    </div>
+    <div class="story-card card3">
+      <span class="story-icon">💻</span>
+      <div class="story-title">リハビリしながら開発</div>
+      <div class="story-text">FP資格取得に挑戦しながら、リハビリの傍らで開発。同じ想いを持つすべての人のために。</div>
+      <div class="story-quote">「同じ想いを持つ人に届けたい。」</div>
+    </div>
+  </div>
+</section>
+
+<!-- 比較 -->
+<section id="compare" style="background:linear-gradient(160deg,#1a0c06,#3d1f0a)">
+  <p class="section-num fade-in">02 — COMPARISON</p>
+  <h2 class="section-title fade-in">紙とは拡張性が段違い</h2>
+  <div class="gold-line fade-in"></div>
+  <p class="section-desc fade-in">写真・PDF・紙にはできない。データだから可能になること。</p>
+  <div class="compare-table fade-in">
+    <table>
+      <thead>
+        <tr>
+          <th style="background:rgba(255,255,255,0.03);color:rgba(212,170,70,0.5);text-align:left;padding-left:20px;font-size:12px">できること</th>
+          <th class="col-other">写真</th>
+          <th class="col-other">PDF・紙</th>
+          <th class="col-data">我が家のレシピ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>編集・アレンジ</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>人数自動計算</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>外出先・買い物中に確認</td><td class="col-other">△</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>贈って育てられる</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>引き継ぎの歴史が残る</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>カロリー自動計算</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>売上予測と連動</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+        <tr><td>スマホを失くしても消えない</td><td class="col-other">✗</td><td class="col-other">✗</td><td class="col-data">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 機能一覧 -->
+<section id="features">
+  <p class="section-num fade-in">03 — FEATURES</p>
+  <h2 class="section-title fade-in" style="color:var(--brown)">主な機能</h2>
+  <div class="gold-line fade-in"></div>
+  <div class="features-grid fade-in">
+    <div class="feature-card">
+      <span class="feature-tag">基本機能</span>
+      <span class="feature-icon">📝</span>
+      <div class="feature-title">レシピ登録・管理</div>
+      <div class="feature-desc">料理名・材料・手順をシンプルに登録。🔪仕込み／🍳調理／🎨盛り付けで手順を分類。YouTube動画リンクも添付可能。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-tag">基本機能</span>
+      <span class="feature-icon">👨‍👩‍👧</span>
+      <div class="feature-title">人数スケーリング</div>
+      <div class="feature-desc">ボタン一つで全材料を自動計算。スーパーで買い物中にその場で人数変更できる。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-tag">基本機能</span>
+      <span class="feature-icon">🔗</span>
+      <div class="feature-title">贈る・インポート</div>
+      <div class="feature-desc">レシピIDとパスワードをLINEで送るだけ。受け取った人がインポートして自分のレシピに。引き継ぎの歴史が残る。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-tag new">NEW</span>
+      <span class="feature-icon">📸</span>
+      <div class="feature-title">レシピOCR取り込み</div>
+      <div class="feature-desc">ノートや料理本を撮影するだけでAIが自動でデータ化。お母さんの手書きノートをそのまま登録できる。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-tag new">NEW</span>
+      <span class="feature-icon">🧊</span>
+      <div class="feature-title">冷蔵庫撮影検索</div>
+      <div class="feature-desc">冷蔵庫を撮影するとAIが食材を認識し、作れるレシピを自動提案。今日の献立に迷わない。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-tag ai">AI</span>
+      <span class="feature-icon">🔥</span>
+      <div class="feature-title">カロリー自動計算</div>
+      <div class="feature-desc">食品マスターDBと連携。材料名を入力するだけでAIが自動マッチング。人数スケーリングと連動。</div>
+    </div>
+  </div>
+</section>
+
+<!-- OCR図解 -->
+<section id="ocr">
+  <p class="section-num fade-in">04 — OCR FLOW</p>
+  <h2 class="section-title fade-in">レシピOCR取り込み機能</h2>
+  <div class="gold-line fade-in"></div>
+  <p class="section-desc fade-in">お母さんの手書きノート、古い料理本。撮影するだけでデジタルレシピに変わる。</p>
+  <div class="flow-diagram fade-in">
+    <div class="flow-step">
+      <span class="flow-step-icon">📓</span>
+      <div class="flow-step-title">手書きノート・料理本</div>
+      <div class="flow-step-desc">何十年前のレシピでもOK</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <span class="flow-step-icon">📱</span>
+      <div class="flow-step-title">スマホで撮影</div>
+      <div class="flow-step-desc">アプリのカメラで1枚撮るだけ</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step flow-highlight">
+      <span class="flow-step-icon">🤖</span>
+      <div class="flow-step-title">AIが自動解析</div>
+      <div class="flow-step-desc">料理名・材料・手順を自動認識</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <span class="flow-step-icon">✏️</span>
+      <div class="flow-step-title">確認・修正</div>
+      <div class="flow-step-desc">間違いがあれば軽く修正</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <span class="flow-step-icon">📖</span>
+      <div class="flow-step-title">マイレシピに登録</div>
+      <div class="flow-step-desc">すぐに使える・贈れる状態に</div>
+    </div>
+  </div>
+  <div style="margin-top:32px;padding:20px 28px;background:rgba(192,98,42,0.15);border:1px solid rgba(192,98,42,0.3);border-radius:16px;max-width:600px;text-align:center" class="fade-in">
+    <p style="font-family:'Shippori Mincho',serif;font-size:16px;color:var(--gold);line-height:1.9">
+      「お母さんのレシピノートを、<br>そのままデジタルに残せる。」
+    </p>
+  </div>
+</section>
+
+<!-- 冷蔵庫検索図解 -->
+<section id="fridge">
+  <p class="section-num fade-in">05 — FRIDGE SEARCH</p>
+  <h2 class="section-title fade-in" style="color:var(--brown)">冷蔵庫撮影検索機能</h2>
+  <div class="gold-line fade-in"></div>
+  <p class="section-desc fade-in" style="color:var(--muted)">「今日何作ろう？」を解決する。冷蔵庫を撮るだけで献立が決まる。</p>
+  <div class="fridge-diagram fade-in">
+    <div class="fridge-box">
+      <div class="fridge-title">🧊 冷蔵庫の中身</div>
+      <div class="fridge-items">
+        <div class="fridge-item">🥩 豚バラ肉</div>
+        <div class="fridge-item">🥬 キャベツ</div>
+        <div class="fridge-item">🧄 にんにく</div>
+        <div class="fridge-item">🥚 卵</div>
+        <div class="fridge-item">🫚 醤油・みりん</div>
+      </div>
+      <div style="margin-top:16px;padding:10px;background:var(--warm);border-radius:10px;font-size:12px;color:var(--muted);text-align:center">
+        📱 撮影するだけでOK
+      </div>
+    </div>
+    <div class="fridge-arrow">
+      <span class="fridge-arrow-icon">🤖</span>
+      <div class="ai-badge">AI解析</div>
+      <div class="fridge-arrow-label">食材を認識<br>マイレシピと照合<br>レシピ広場も検索</div>
+    </div>
+    <div class="fridge-box">
+      <div class="fridge-title">📖 作れるレシピ</div>
+      <div class="recipe-results">
+        <div class="recipe-result">🥟 浩之特製 餃子</div>
+        <div class="recipe-result">🍳 豚キャベツ炒め</div>
+        <div class="recipe-result">🍜 にんにく醤油ラーメン</div>
+        <div class="recipe-result">🥚 卵とキャベツのスープ</div>
+      </div>
+      <div style="margin-top:16px;padding:10px;background:#e8f4ed;border-radius:10px;font-size:12px;color:var(--green);text-align:center">
+        ✓ マイレシピを優先表示
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AIロードマップ -->
+<section id="ai">
+  <p class="section-num fade-in">06 — AI ROADMAP</p>
+  <h2 class="section-title fade-in">AI機能ロードマップ</h2>
+  <div class="gold-line fade-in"></div>
+  <div class="ai-roadmap fade-in">
+    <div class="ai-phase">
+      <div class="ai-phase-num">1</div>
+      <div class="ai-phase-content">
+        <div class="ai-phase-tag">実装中</div>
+        <div class="ai-phase-title">食品コード自動マッチング</div>
+        <div class="ai-phase-desc">材料名から食品成分DBを自動検索。カロリー・栄養素を自動入力。</div>
+      </div>
+    </div>
+    <div class="ai-phase">
+      <div class="ai-phase-num">2</div>
+      <div class="ai-phase-content">
+        <div class="ai-phase-tag">次フェーズ</div>
+        <div class="ai-phase-title">レシピOCR取り込み</div>
+        <div class="ai-phase-desc">手書きノート・料理本を撮影するだけで自動データ化。お母さんの昔のレシピもそのまま登録。</div>
+      </div>
+    </div>
+    <div class="ai-phase">
+      <div class="ai-phase-num">3</div>
+      <div class="ai-phase-content">
+        <div class="ai-phase-tag">次フェーズ</div>
+        <div class="ai-phase-title">冷蔵庫撮影→献立提案</div>
+        <div class="ai-phase-desc">冷蔵庫を撮影するとAIが食材を認識し、マイレシピから作れる料理を自動提案。</div>
+      </div>
+    </div>
+    <div class="ai-phase">
+      <div class="ai-phase-num future">4</div>
+      <div class="ai-phase-content">
+        <div class="ai-phase-tag">将来</div>
+        <div class="ai-phase-title">売上予測×仕込み量自動計算</div>
+        <div class="ai-phase-desc">過去の売上データと天気・曜日からAIが来客数を予測。仕込み量を自動計算してロスを削減。</div>
+      </div>
+    </div>
+    <div class="ai-phase">
+      <div class="ai-phase-num future">5</div>
+      <div class="ai-phase-content">
+        <div class="ai-phase-tag">将来</div>
+        <div class="ai-phase-title">レシピ自動改善提案</div>
+        <div class="ai-phase-desc">「もう少し甘く」「カロリーを下げたい」などAIがレシピの調整を提案。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ビジネスモデル -->
+<section id="business">
+  <p class="section-num fade-in">07 — BUSINESS MODEL</p>
+  <h2 class="section-title fade-in" style="color:var(--brown)">収益化モデル</h2>
+  <div class="gold-line fade-in"></div>
+  <p class="section-desc fade-in" style="color:var(--muted)">フリーミアムモデル。無料で広め、価値を感じたら課金。</p>
+  <div class="business-grid fade-in">
+    <div class="plan-card plan-free">
+      <span class="plan-icon">🆓</span>
+      <div class="plan-name" style="color:var(--brown)">無料プラン</div>
+      <div class="plan-price" style="color:var(--accent)">¥0<span>/月</span></div>
+      <ul class="plan-features" style="color:var(--muted)">
+        <li>レシピ登録10件まで</li>
+        <li>基本機能すべて</li>
+        <li>贈る機能（月3回）</li>
+        <li>レシピ広場の閲覧</li>
+      </ul>
+    </div>
+    <div class="plan-card plan-premium">
+      <span class="plan-icon">⭐</span>
+      <div class="plan-name">プレミアム</div>
+      <div class="plan-price">¥500<span>/月</span></div>
+      <ul class="plan-features">
+        <li>レシピ登録無制限</li>
+        <li>贈る機能無制限</li>
+        <li>カロリー表示</li>
+        <li>引き継ぎ履歴</li>
+        <li>本棚機能</li>
+      </ul>
+    </div>
+    <div class="plan-card plan-business">
+      <span class="plan-icon">🏢</span>
+      <div class="plan-name">ビジネス</div>
+      <div class="plan-price">¥5,000<span>/月</span></div>
+      <ul class="plan-features">
+        <li>プレミアム全機能</li>
+        <li>閲覧ログ管理</li>
+        <li>有効期限設定</li>
+        <li>アクセス権限管理</li>
+        <li>料理教室・栄養士向け</li>
+      </ul>
+    </div>
+    <div class="plan-card plan-enterprise">
+      <span class="plan-icon">🏭</span>
+      <div class="plan-name">エンタープライズ</div>
+      <div class="plan-price" style="font-size:18px">要相談</div>
+      <ul class="plan-features">
+        <li>ビジネス全機能</li>
+        <li>売上予測連動</li>
+        <li>IP制限・監査ログ</li>
+        <li>フランチャイズ対応</li>
+        <li>チェーン店・給食センター</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- セキュリティ -->
+<section id="security">
+  <p class="section-num fade-in">08 — SECURITY</p>
+  <h2 class="section-title fade-in">レシピ漏洩リスクを解決</h2>
+  <div class="gold-line fade-in"></div>
+  <p class="section-desc fade-in">チェーン店・フランチャイズにとってレシピは企業秘密。メール送信の誤送信・転送リスクをゼロに。</p>
+  <div class="security-compare fade-in">
+    <div class="sec-box sec-bad">
+      <div class="sec-title" style="color:rgba(229,62,62,0.8)">❌ 従来のメール送信</div>
+      <div class="sec-flow">
+        <div class="sec-step bad">メールにレシピ本文を添付</div>
+        <div class="sec-arrow">↓</div>
+        <div class="sec-step bad">誤送信・転送・スクリーンショット</div>
+        <div class="sec-arrow">↓</div>
+        <div class="sec-step bad">ライバル店・競合他社に漏れる</div>
+        <div class="sec-arrow">↓</div>
+        <div class="sec-step bad">取り返しがつかない</div>
+      </div>
+    </div>
+    <div class="sec-box sec-good">
+      <div class="sec-title" style="color:var(--green)">✅ 我が家のレシピ</div>
+      <div class="sec-flow">
+        <div class="sec-step good">IDとパスワードだけ送る</div>
+        <div class="sec-arrow" style="color:rgba(74,124,89,0.4)">↓</div>
+        <div class="sec-step good">アプリ内でしか見られない</div>
+        <div class="sec-arrow" style="color:rgba(74,124,89,0.4)">↓</div>
+        <div class="sec-step good">閲覧ログ・有効期限で管理</div>
+        <div class="sec-arrow" style="color:rgba(74,124,89,0.4)">↓</div>
+        <div class="sec-step good">漏れても本文は流出しない</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BtoB -->
+<section id="btob">
+  <p class="section-num fade-in">09 — BtoB</p>
+  <h2 class="section-title fade-in" style="color:var(--brown)">BtoBの展開</h2>
+  <div class="gold-line fade-in"></div>
+  <div class="btob-grid fade-in">
+    <div class="btob-card">
+      <span class="btob-tag">集客ツール</span>
+      <span class="btob-icon">👩‍🍳</span>
+      <div class="btob-title">料理教室</div>
+      <div class="btob-desc">一部公開で集客→体験レッスンへの導線。生徒へのレシピ配布もLINE一発。</div>
+    </div>
+    <div class="btob-card">
+      <span class="btob-tag">文化継承</span>
+      <span class="btob-icon">🌾</span>
+      <div class="btob-title">発酵調理師協会</div>
+      <div class="btob-desc">伝統食のアーカイブ化。生徒へのレシピ配布と新規会員獲得の導線に。</div>
+    </div>
+    <div class="btob-card">
+      <span class="btob-tag">栄養管理</span>
+      <span class="btob-icon">🥗</span>
+      <div class="btob-title">栄養士・管理栄養士</div>
+      <div class="btob-desc">患者へのカロリー付きレシピ配布。退院後の食事療法をサポート。</div>
+    </div>
+    <div class="btob-card">
+      <span class="btob-tag">介護・医療</span>
+      <span class="btob-icon">🏥</span>
+      <div class="btob-title">介護施設・病院</div>
+      <div class="btob-desc">やわらか食・塩分制限食を施設間で共有。家族への「家でも作れる」レシピ提供。</div>
+    </div>
+    <div class="btob-card">
+      <span class="btob-tag">フィットネス</span>
+      <span class="btob-icon">💪</span>
+      <div class="btob-title">ライザップ×コラボ</div>
+      <div class="btob-desc">PFCバランス付きレシピをトレーナーから会員へ。会員継続率アップに貢献。</div>
+    </div>
+    <div class="btob-card">
+      <span class="btob-tag">業務効率化</span>
+      <span class="btob-icon">🏭</span>
+      <div class="btob-title">チェーン店・給食</div>
+      <div class="btob-desc">売上予測と連動した仕込み量自動計算。フランチャイズ全店への一括配信。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ロードマップ -->
+<section id="roadmap">
+  <p class="section-num fade-in">10 — ROADMAP</p>
+  <h2 class="section-title fade-in">開発ロードマップ</h2>
+  <div class="gold-line fade-in"></div>
+  <div class="roadmap fade-in">
+    <div class="roadmap-item">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div class="roadmap-dot done"></div>
+        <div style="width:2px;flex:1;background:rgba(74,124,89,0.3);min-height:40px"></div>
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">PHASE 1 — 完了</div>
+        <div class="roadmap-title">基本機能リリース</div>
+        <div class="roadmap-items">レシピ登録・編集・削除 ／ 人数スケーリング ／ 写真アップロード ／ 贈る・インポート ／ パスワード設定</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div class="roadmap-dot active"></div>
+        <div style="width:2px;flex:1;background:rgba(192,98,42,0.3);min-height:40px"></div>
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">PHASE 2 — 進行中</div>
+        <div class="roadmap-title">レシピ広場・公開機能</div>
+        <div class="roadmap-items">公開3段階 ／ ニックネーム ／ SNS共有 ／ BtoB営業開始（発酵調理師協会）</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div class="roadmap-dot future"></div>
+        <div style="width:2px;flex:1;background:rgba(255,255,255,0.05);min-height:40px"></div>
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">PHASE 3</div>
+        <div class="roadmap-title">AI機能追加</div>
+        <div class="roadmap-items">OCR取り込み ／ 冷蔵庫撮影検索 ／ カロリー自動計算 ／ 材料逆引き検索</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div class="roadmap-dot future"></div>
+        <div style="width:2px;flex:1;background:rgba(255,255,255,0.05);min-height:40px"></div>
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">PHASE 4</div>
+        <div class="roadmap-title">課金・BtoB本格化</div>
+        <div class="roadmap-items">Stripe決済導入 ／ 引き継ぎ履歴・本棚機能 ／ 印刷機能 ／ ライザップ等コラボ</div>
+      </div>
+    </div>
+    <div class="roadmap-item">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="roadmap-dot future"></div>
+      </div>
+      <div class="roadmap-content">
+        <div class="roadmap-phase">PHASE 5</div>
+        <div class="roadmap-title">法人化・エンタープライズ</div>
+        <div class="roadmap-items">合同会社設立 ／ 売上予測×仕込み量連動 ／ チェーン店・給食センター展開</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <p class="section-num fade-in">11 — CONTACT</p>
+  <h2 class="cta-title fade-in">
+    あなたの「あの味」を、<br>ここに残してください。
+  </h2>
+  <p class="cta-sub fade-in">
+    火事でも、引越しでも、消えない。<br>
+    娘に贈ったら、娘がさらに進化させられる。<br>
+    そのレシピには、あなたの顔がある。
+  </p>
+  <a href="https://sugiyamasmp-hue.github.io/wagaya-recipe/wagaya-app-ready.html" class="cta-btn fade-in" target="_blank">アプリを試す（無料）</a>
+  <div class="profile-box fade-in">
+    <div class="profile-name">amadopapa（杉山浩之）</div>
+    <div class="profile-title">東京スンドゥブ創業者・フードプロデューサー・総料理長</div>
+    <div class="profile-text">
+      父親の介護時代のレシピが手元にないことがきっかけ。脳卒中で車椅子生活となりながら、リハビリの傍らFP資格取得に挑戦しつつ本サービスを開発。<br><br>
+      📝 note: <a href="https://note.com/amadopapa" style="color:var(--gold)">note.com/amadopapa</a><br>
+      📧 sugiyama.smp@gmail.com
+    </div>
+  </div>
+</section>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 80);
+    }
+  });
+}, {threshold: 0.1});
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
