@@ -57,7 +57,7 @@ export default async function handler(req, res) {
   "description": "一言メモ",
   "servings": 2,
   "ingredients": [
-    {"name": "材料名", "amount": "分量"}
+    {"name": "材料名", "amount": 200, "unit": "g"}
   ],
   "steps": [
     {"type": "prep", "content": "手順"},
@@ -65,6 +65,8 @@ export default async function handler(req, res) {
     {"type": "plate", "content": "手順"}
   ]
 }
+amountは必ず数値を抽出すること（例：200g→200、大さじ2→2、少々→nullでOK）。読み取れる数字は必ず入れる。
+unitは画像から読み取った単位をそのまま使う。リストにない単位（カップ、少々など）もそのまま入れてよい。
 typeはprep（仕込み）、cook（調理）、plate（盛り付け）のどれかを判断して入れてください。レシピが読み取れない場合は { "error": "読み取れませんでした" } を返してください。`
             }
           ]
