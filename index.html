@@ -98,6 +98,9 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
         <span>🥩</span><input id="ingredientSearchInput" type="text" placeholder="材料で検索..." style="border:none;outline:none;flex:1;font-size:14px;color:var(--brown);background:transparent">
       </div>
     </div>
+    <button onclick="openFridgeScanModal()" style="width:100%;padding:11px 16px;background:var(--green);border:none;border-radius:16px;color:white;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:20px">
+      <span style="font-size:16px">🧊</span> 冷蔵庫をスキャンしてレシピを探す
+    </button>
     <div id="tabMyContent">
       <div style="font-family:'Noto Serif JP',serif;font-size:15px;color:var(--brown);margin-bottom:12px">マイレシピ</div>
       <div id="myGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px">
@@ -321,6 +324,38 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
   </div>
 </div>
 
+<!-- 冷蔵庫スキャンモーダル -->
+<div class="modal-overlay" id="fridgeScanModal" onclick="closeModal('fridgeScanModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Noto Serif JP',serif;font-size:18px;margin-bottom:4px">🧊 冷蔵庫スキャン</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">写真を撮るとAIが食材を認識してレシピを探します</p>
+
+    <div id="fridgePreview" style="width:100%;height:180px;background:var(--warm);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:56px;margin-bottom:12px;overflow:hidden">🧊</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button onclick="document.getElementById('fridgeCameraInput').click()" style="padding:11px;background:var(--brown);border:none;border-radius:12px;color:#f2d880;font-size:13px;cursor:pointer;font-weight:500">📷 写真を撮る</button>
+      <button onclick="document.getElementById('fridgeGalleryInput').click()" style="padding:11px;background:var(--warm);border:none;border-radius:12px;color:var(--brown);font-size:13px;cursor:pointer;font-weight:500">🖼️ 写真を選ぶ</button>
+    </div>
+    <input type="file" id="fridgeCameraInput" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="fridgeGalleryInput" accept="image/*" style="display:none">
+
+    <button id="fridgeScanBtn" onclick="scanFridge()" style="width:100%;padding:13px;background:var(--green);border:none;border-radius:12px;color:white;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:12px;display:none">🔍 食材を認識する</button>
+
+    <div id="fridgeScanStatus" style="font-size:12px;text-align:center;margin-bottom:10px;min-height:18px"></div>
+
+    <div id="fridgeIngredientsArea" style="display:none;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">認識した食材（タップで除外）:</div>
+      <div id="fridgeIngredientTags" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary" onclick="closeModal('fridgeScanModal')">閉じる</button>
+      <button id="fridgeSearchBtn" class="btn btn-primary" onclick="searchByFridgeIngredients()" style="display:none">🍳 レシピを探す</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://bobditigjxeofsfofsrb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvYmRpdGlnanhlb2ZzZm9mc3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NDY0NDAsImV4cCI6MjA5NDMyMjQ0MH0.P_umtNBTpBfJ5Ke48AX9Qo4z_2NftYGZMxkJDS_7ijU';
@@ -339,6 +374,10 @@ let editingId = null;
 let currentNickname = '';
 let ingredientSearchMode = 'main';
 let ingredientsMap = {};
+let fridgeScanIngredients = [];
+let fridgeSelectedIngredients = [];
+let fridgeImageData = null;
+let fridgeMediaType = null;
 let stepCount = 0;
 let uploadedFile = null;
 const emojis = ['🍲','🥟','🍳','🍜','🥩','🍛','🥗','🍱','🍝','🍤'];
@@ -400,6 +439,8 @@ function handlePhotoSelect(input) {
 }
 document.getElementById('photoCameraInput').addEventListener('change', function() { handlePhotoSelect(this); });
 document.getElementById('photoGalleryInput').addEventListener('change', function() { handlePhotoSelect(this); });
+document.getElementById('fridgeCameraInput').addEventListener('change', function() { handleFridgeImageSelect(this); });
+document.getElementById('fridgeGalleryInput').addEventListener('change', function() { handleFridgeImageSelect(this); });
 
 async function showApp() {
   document.getElementById('authScreen').style.display = 'none';
@@ -777,12 +818,23 @@ function applyFilters() {
   if (titleQ) {
     filtered = filtered.filter(r => r.title.toLowerCase().includes(titleQ));
   }
-  if (ingQ) {
+  if (fridgeScanIngredients.length > 0) {
+    // 冷蔵庫スキャンモード: いずれかの食材を含むレシピを表示
+    filtered = filtered.filter(r => {
+      const allIngs = [
+        (r.main_ingredient || '').toLowerCase(),
+        ...(ingredientsMap[r.id] || []).map(n => n.toLowerCase())
+      ];
+      return fridgeScanIngredients.some(fi => {
+        const fiLower = fi.toLowerCase();
+        return allIngs.some(ing => ing.includes(fiLower) || fiLower.includes(ing));
+      });
+    });
+  } else if (ingQ) {
     filtered = filtered.filter(r => {
       const mainIng = (r.main_ingredient || '').toLowerCase();
       if (ingredientSearchMode === 'main') {
         if (mainIng) return mainIng.includes(ingQ);
-        // main_ingredient 未設定のレシピは ingredients テーブルで代替検索
         return (ingredientsMap[r.id] || []).some(n => n.toLowerCase().includes(ingQ));
       }
       const mainMatch = mainIng.includes(ingQ);
@@ -791,6 +843,117 @@ function applyFilters() {
     });
   }
   renderMyRecipes(filtered);
+}
+
+// ── 冷蔵庫スキャン ──────────────────────────────────────────────────────────
+
+function openFridgeScanModal() {
+  fridgeImageData = null;
+  fridgeMediaType = null;
+  fridgeSelectedIngredients = [];
+  document.getElementById('fridgePreview').innerHTML = '🧊';
+  document.getElementById('fridgeScanBtn').style.display = 'none';
+  document.getElementById('fridgeScanStatus').textContent = '';
+  document.getElementById('fridgeIngredientsArea').style.display = 'none';
+  document.getElementById('fridgeSearchBtn').style.display = 'none';
+  document.getElementById('fridgeCameraInput').value = '';
+  document.getElementById('fridgeGalleryInput').value = '';
+  document.getElementById('fridgeScanModal').classList.add('open');
+}
+
+function handleFridgeImageSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    const [header, imageData] = dataUrl.split(',');
+    fridgeImageData = imageData;
+    fridgeMediaType = header.match(/data:([^;]+)/)[1];
+    document.getElementById('fridgePreview').innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+    document.getElementById('fridgeScanBtn').style.display = 'block';
+    document.getElementById('fridgeScanStatus').textContent = '';
+    document.getElementById('fridgeIngredientsArea').style.display = 'none';
+    document.getElementById('fridgeSearchBtn').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function scanFridge() {
+  if (!fridgeImageData) return;
+  const statusEl = document.getElementById('fridgeScanStatus');
+  const scanBtn = document.getElementById('fridgeScanBtn');
+  scanBtn.disabled = true;
+  scanBtn.textContent = '⏳ 認識中...';
+  statusEl.textContent = '';
+  document.getElementById('fridgeIngredientsArea').style.display = 'none';
+  document.getElementById('fridgeSearchBtn').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/fridge-scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageData: fridgeImageData, mediaType: fridgeMediaType })
+    });
+    const result = await res.json();
+
+    if (result.error || !result.ingredients?.length) {
+      statusEl.innerHTML = `<span style="color:#e53e3e">❌ ${result.error || '食材を認識できませんでした'}</span>`;
+      return;
+    }
+
+    fridgeSelectedIngredients = [...result.ingredients];
+    renderFridgeIngredientTags();
+    statusEl.innerHTML = `<span style="color:var(--green)">✅ ${result.ingredients.length}種類の食材を認識しました</span>`;
+    document.getElementById('fridgeIngredientsArea').style.display = 'block';
+    document.getElementById('fridgeSearchBtn').style.display = 'block';
+  } catch (err) {
+    statusEl.innerHTML = '<span style="color:#e53e3e">❌ スキャンに失敗しました。サーバーが起動しているか確認してください。</span>';
+  } finally {
+    scanBtn.disabled = false;
+    scanBtn.textContent = '🔍 食材を認識する';
+  }
+}
+
+function renderFridgeIngredientTags() {
+  document.getElementById('fridgeIngredientTags').innerHTML = fridgeSelectedIngredients.map((ing, i) =>
+    `<span onclick="removeFridgeIngredient(${i})" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:var(--warm);border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--accent)">${ing} <span style="font-size:10px;color:var(--muted)">✕</span></span>`
+  ).join('');
+}
+
+function removeFridgeIngredient(index) {
+  fridgeSelectedIngredients.splice(index, 1);
+  renderFridgeIngredientTags();
+  if (!fridgeSelectedIngredients.length) {
+    document.getElementById('fridgeSearchBtn').style.display = 'none';
+  }
+}
+
+function searchByFridgeIngredients() {
+  if (!fridgeSelectedIngredients.length) return;
+  fridgeScanIngredients = [...fridgeSelectedIngredients];
+  closeModal('fridgeScanModal');
+  switchTab('my');
+  applyFilters();
+  renderFridgeScanBanner();
+}
+
+function renderFridgeScanBanner() {
+  const old = document.getElementById('fridgeScanBanner');
+  if (old) old.remove();
+  const banner = document.createElement('div');
+  banner.id = 'fridgeScanBanner';
+  banner.style.cssText = 'background:var(--green);color:white;padding:9px 14px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;border-radius:12px';
+  banner.innerHTML = `<span>🧊 ${fridgeScanIngredients.join('・')}</span><button onclick="clearFridgeScan()" style="background:rgba(255,255,255,0.25);border:none;border-radius:8px;color:white;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">✕ クリア</button>`;
+  const tabMyContent = document.getElementById('tabMyContent');
+  tabMyContent.insertBefore(banner, tabMyContent.firstChild);
+}
+
+function clearFridgeScan() {
+  fridgeScanIngredients = [];
+  const banner = document.getElementById('fridgeScanBanner');
+  if (banner) banner.remove();
+  applyFilters();
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
