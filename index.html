@@ -86,8 +86,17 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
     <div id="tabPublic" onclick="switchTab('public')" style="flex:1;padding:12px 8px;text-align:center;font-size:12px;cursor:pointer;color:var(--muted)"><span style="font-size:16px;display:block;margin-bottom:2px">🌐</span>レシピ広場</div>
   </div>
   <div style="padding:16px;max-width:480px;margin:0 auto">
-    <div style="background:white;border:1.5px solid var(--warm);border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px;margin-bottom:20px">
-      <span>🔍</span><input id="searchInput" type="text" placeholder="レシピを検索..." style="border:none;outline:none;flex:1;font-size:14px;color:var(--brown);background:transparent">
+    <div style="background:white;border:1.5px solid var(--warm);border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span>🔍</span><input id="searchInput" type="text" placeholder="レシピ名を検索..." style="border:none;outline:none;flex:1;font-size:14px;color:var(--brown);background:transparent">
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="display:flex;gap:20px;margin-bottom:8px;padding:0 4px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--brown)"><input type="radio" name="ingredientMode" value="main" checked onchange="setIngredientSearchMode('main')" style="accent-color:var(--accent)"> 主な材料</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--brown)"><input type="radio" name="ingredientMode" value="all" onchange="setIngredientSearchMode('all')" style="accent-color:var(--accent)"> すべての材料</label>
+      </div>
+      <div style="background:white;border:1.5px solid var(--warm);border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px">
+        <span>🥩</span><input id="ingredientSearchInput" type="text" placeholder="材料で検索..." style="border:none;outline:none;flex:1;font-size:14px;color:var(--brown);background:transparent">
+      </div>
     </div>
     <div id="tabMyContent">
       <div style="font-family:'Noto Serif JP',serif;font-size:15px;color:var(--brown);margin-bottom:12px">マイレシピ</div>
@@ -328,6 +337,8 @@ let newServing = 2;
 let selectedVis = 'private';
 let editingId = null;
 let currentNickname = '';
+let ingredientSearchMode = 'main';
+let ingredientsMap = {};
 let stepCount = 0;
 let uploadedFile = null;
 const emojis = ['🍲','🥟','🍳','🍜','🥩','🍛','🥗','🍱','🍝','🍤'];
@@ -375,10 +386,8 @@ document.getElementById('signupBtn').addEventListener('click', async () => {
 document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importModal').classList.add('open'));
 
 document.getElementById('fabBtn').addEventListener('click', () => openNewRecipeForm());
-document.getElementById('searchInput').addEventListener('input', () => {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  renderMyRecipes(myRecipes.filter(r => r.title.toLowerCase().includes(q)));
-});
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('ingredientSearchInput').addEventListener('input', applyFilters);
 
 function handlePhotoSelect(input) {
   if (!input.files || !input.files[0]) return;
@@ -405,7 +414,17 @@ async function showApp() {
 async function loadMyRecipes() {
   const {data} = await sb.from('recipes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
   myRecipes = data || [];
-  renderMyRecipes(myRecipes);
+  if (myRecipes.length) {
+    const {data: ings} = await sb.from('ingredients').select('recipe_id, name').in('recipe_id', myRecipes.map(r => r.id));
+    ingredientsMap = {};
+    (ings||[]).forEach(ing => {
+      if (!ingredientsMap[ing.recipe_id]) ingredientsMap[ing.recipe_id] = [];
+      ingredientsMap[ing.recipe_id].push(ing.name);
+    });
+  } else {
+    ingredientsMap = {};
+  }
+  applyFilters();
 }
 
 async function loadPublicRecipes() {
@@ -744,6 +763,31 @@ async function importRecipe() {
   closeModal('importModal');
   alert('✅ レシピをインポートしました！');
   loadMyRecipes();
+}
+
+function setIngredientSearchMode(mode) {
+  ingredientSearchMode = mode;
+  applyFilters();
+}
+
+function applyFilters() {
+  const titleQ = document.getElementById('searchInput').value.toLowerCase();
+  const ingQ = document.getElementById('ingredientSearchInput').value.toLowerCase();
+  let filtered = myRecipes;
+  if (titleQ) {
+    filtered = filtered.filter(r => r.title.toLowerCase().includes(titleQ));
+  }
+  if (ingQ) {
+    filtered = filtered.filter(r => {
+      if (ingredientSearchMode === 'main') {
+        return (r.main_ingredient || '').toLowerCase().includes(ingQ);
+      }
+      const mainMatch = (r.main_ingredient || '').toLowerCase().includes(ingQ);
+      const otherMatch = (ingredientsMap[r.id] || []).some(n => n.toLowerCase().includes(ingQ));
+      return mainMatch || otherMatch;
+    });
+  }
+  renderMyRecipes(filtered);
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
