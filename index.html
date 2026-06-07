@@ -779,10 +779,13 @@ function applyFilters() {
   }
   if (ingQ) {
     filtered = filtered.filter(r => {
+      const mainIng = (r.main_ingredient || '').toLowerCase();
       if (ingredientSearchMode === 'main') {
-        return (r.main_ingredient || '').toLowerCase().includes(ingQ);
+        if (mainIng) return mainIng.includes(ingQ);
+        // main_ingredient 未設定のレシピは ingredients テーブルで代替検索
+        return (ingredientsMap[r.id] || []).some(n => n.toLowerCase().includes(ingQ));
       }
-      const mainMatch = (r.main_ingredient || '').toLowerCase().includes(ingQ);
+      const mainMatch = mainIng.includes(ingQ);
       const otherMatch = (ingredientsMap[r.id] || []).some(n => n.toLowerCase().includes(ingQ));
       return mainMatch || otherMatch;
     });
