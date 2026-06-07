@@ -98,9 +98,12 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
         <span>🥩</span><input id="ingredientSearchInput" type="text" placeholder="材料で検索..." style="border:none;outline:none;flex:1;font-size:14px;color:var(--brown);background:transparent">
       </div>
     </div>
-    <button onclick="openFridgeScanModal()" style="width:100%;padding:11px 16px;background:var(--green);border:none;border-radius:16px;color:white;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:20px">
-      <span style="font-size:16px">🧊</span> 冷蔵庫をスキャンしてレシピを探す
-    </button>
+    <div id="fridgeScanArea" style="margin-bottom:20px">
+      <button id="fridgeScanTrigger" onclick="openFridgeScanModal()" style="width:100%;padding:11px 16px;background:var(--green);border:none;border-radius:16px;color:white;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span style="font-size:16px">🧊</span> 冷蔵庫をスキャンしてレシピを探す
+      </button>
+      <div id="fridgeScanBanner" style="display:none;background:var(--green);color:white;padding:9px 14px;font-size:12px;border-radius:16px;align-items:center;justify-content:space-between;gap:8px"></div>
+    </div>
     <div id="tabMyContent">
       <div style="font-family:'Noto Serif JP',serif;font-size:15px;color:var(--brown);margin-bottom:12px">マイレシピ</div>
       <div id="myGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px">
@@ -897,7 +900,7 @@ async function scanFridge() {
     });
     const result = await res.json();
 
-    if (result.error || !result.ingredients?.length) {
+    if (!result.ingredients?.length) {
       statusEl.innerHTML = `<span style="color:#e53e3e">❌ ${result.error || '食材を認識できませんでした'}</span>`;
       return;
     }
@@ -939,20 +942,16 @@ function searchByFridgeIngredients() {
 }
 
 function renderFridgeScanBanner() {
-  const old = document.getElementById('fridgeScanBanner');
-  if (old) old.remove();
-  const banner = document.createElement('div');
-  banner.id = 'fridgeScanBanner';
-  banner.style.cssText = 'background:var(--green);color:white;padding:9px 14px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;border-radius:12px';
+  document.getElementById('fridgeScanTrigger').style.display = 'none';
+  const banner = document.getElementById('fridgeScanBanner');
+  banner.style.display = 'flex';
   banner.innerHTML = `<span>🧊 ${fridgeScanIngredients.join('・')}</span><button onclick="clearFridgeScan()" style="background:rgba(255,255,255,0.25);border:none;border-radius:8px;color:white;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0">✕ クリア</button>`;
-  const tabMyContent = document.getElementById('tabMyContent');
-  tabMyContent.insertBefore(banner, tabMyContent.firstChild);
 }
 
 function clearFridgeScan() {
   fridgeScanIngredients = [];
-  const banner = document.getElementById('fridgeScanBanner');
-  if (banner) banner.remove();
+  document.getElementById('fridgeScanTrigger').style.display = 'flex';
+  document.getElementById('fridgeScanBanner').style.display = 'none';
   applyFilters();
 }
 
