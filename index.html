@@ -45,6 +45,10 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
 .tag-prep{background:#e8f0fe;color:#3a5fc8}
 .tag-cook{background:#fde8dc;color:#c0622a}
 .tag-plate{background:#e8f4ed;color:#4a7c59}
+.diff-star{font-size:26px;cursor:pointer;padding:2px 4px;opacity:0.25;transition:opacity 0.15s;color:var(--accent)}
+.diff-star.on{opacity:1}
+.step-photo-upload{width:100%;height:76px;background:var(--warm);border-radius:8px;border:1.5px dashed #d4a870;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:12px;color:var(--muted);position:relative;overflow:hidden;margin-top:6px}
+.step-photo-upload img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
 </style>
 </head>
 <body>
@@ -224,6 +228,27 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
       </div>
     </div>
 
+    <div class="form-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="form-label">⏱️ 仕込み時間（分）</label>
+        <input id="newPrepTime" type="number" min="0" placeholder="例：30" class="input-field">
+      </div>
+      <div>
+        <label class="form-label">🍳 調理時間（分）</label>
+        <input id="newCookTime" type="number" min="0" placeholder="例：20" class="input-field">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">⭐ 難易度</label>
+      <div style="display:flex;gap:2px;align-items:center">
+        <span class="diff-star on" onclick="setDifficulty(1)">★</span>
+        <span class="diff-star" onclick="setDifficulty(2)">★</span>
+        <span class="diff-star" onclick="setDifficulty(3)">★</span>
+        <span id="diffLabel" style="font-size:12px;color:var(--muted);margin-left:8px">かんたん</span>
+      </div>
+    </div>
+
     <div class="form-section">
       <label class="form-label">🛒 材料・分量</label>
       <div id="newIngredients"></div>
@@ -363,6 +388,8 @@ textarea.input-field{resize:none;height:72px;line-height:1.6}
 const SUPABASE_URL = 'https://bobditigjxeofsfofsrb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvYmRpdGlnanhlb2ZzZm9mc3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NDY0NDAsImV4cCI6MjA5NDMyMjQ0MH0.P_umtNBTpBfJ5Ke48AX9Qo4z_2NftYGZMxkJDS_7ijU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const CLOUDINARY_CLOUD_NAME = 'dyawr0npq';
+const CLOUDINARY_UPLOAD_PRESET = 'vault_unsigned';
 
 let currentUser = null;
 let myRecipes = [];
@@ -383,6 +410,8 @@ let fridgeImageData = null;
 let fridgeMediaType = null;
 let stepCount = 0;
 let uploadedFile = null;
+let selectedDifficulty = 1;
+let stepPhotoFiles = {};
 const emojis = ['🍲','🥟','🍳','🍜','🥩','🍛','🥗','🍱','🍝','🍤'];
 
 // 初期化
@@ -563,6 +592,15 @@ async function openRecipe(id) {
   if (recipe.description) meta.innerHTML += `<span>${recipe.description}</span>`;
   if (recipe.genre) meta.innerHTML += `<span>${genreLabel(recipe.genre)}</span>`;
   if (recipe.status) meta.innerHTML += `<span>${statusLabel(recipe.status)}</span>`;
+  if (recipe.prep_time || recipe.cook_time) {
+    const parts = [];
+    if (recipe.prep_time) parts.push(`仕込み${recipe.prep_time}分`);
+    if (recipe.cook_time) parts.push(`調理${recipe.cook_time}分`);
+    meta.innerHTML += `<span>⏱️ ${parts.join('・')}</span>`;
+  }
+  if (recipe.difficulty) {
+    meta.innerHTML += `<span>${'★'.repeat(recipe.difficulty)}${'☆'.repeat(3-recipe.difficulty)}</span>`;
+  }
 
   // 材料
   const {data: ings} = await sb.from('ingredients').select('*').eq('recipe_id', id).order('order_num');
@@ -572,10 +610,13 @@ async function openRecipe(id) {
   // 手順
   const {data: stps} = await sb.from('steps').select('*').eq('recipe_id', id).order('order_num');
   document.getElementById('stepsList').innerHTML = (stps||[]).map((s,i) => `
-    <li style="display:flex;gap:12px;margin-bottom:14px;font-size:13px;line-height:1.6;align-items:flex-start">
-      <span style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">${i+1}</span>
-      <span class="tag ${typeClass(s.type)}">${typeLabel(s.type)}</span>
-      <div>${s.content}${s.youtube_url ? `<br><a href="${s.youtube_url}" target="_blank" style="font-size:11px;color:#e53e3e;text-decoration:none">▶️ 動画で見る</a>` : ''}</div>
+    <li style="margin-bottom:16px;font-size:13px;line-height:1.6">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">${i+1}</span>
+        <span class="tag ${typeClass(s.type)}">${typeLabel(s.type)}</span>
+        <div>${s.content}${s.youtube_url ? `<br><a href="${s.youtube_url}" target="_blank" style="font-size:11px;color:#e53e3e;text-decoration:none">▶️ 動画で見る</a>` : ''}</div>
+      </div>
+      ${s.photo_url ? `<img src="${s.photo_url}" style="width:100%;border-radius:10px;margin-top:8px;object-fit:cover;max-height:200px">` : ''}
     </li>`).join('');
 
   const isOwner = recipe.user_id === currentUser.id;
@@ -638,11 +679,16 @@ function addIngredientRow(name='', amount='', unit='g', memo='') {
   document.getElementById('newIngredients').appendChild(div);
 }
 
-function addStepRow(content='') {
+function addStepRow(content='', photoUrl='') {
   stepCount++;
+  const idx = stepCount;
   const div = document.createElement('div');
   div.className = 'step-row';
-  div.innerHTML = `<div class="step-badge">${stepCount}</div><textarea class="input-field" placeholder="手順を入力...">${content}</textarea>`;
+  div.dataset.stepIdx = idx;
+  const photoPreview = photoUrl
+    ? `<img src="${photoUrl}"><div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.5);color:white;font-size:10px;padding:2px 6px;border-radius:6px;z-index:1">変更</div><input type="file" accept="image/*" style="display:none" onchange="handleStepPhoto(${idx}, this)">`
+    : `<span>📷</span><span>工程写真を追加（任意）</span><input type="file" accept="image/*" style="display:none" onchange="handleStepPhoto(${idx}, this)">`;
+  div.innerHTML = `<div class="step-badge">${idx}</div><div style="flex:1"><textarea class="input-field" placeholder="手順を入力...">${content}</textarea><div class="step-photo-upload" onclick="this.querySelector('input').click()">${photoPreview}</div></div>`;
   document.getElementById('newSteps').appendChild(div);
 }
 
@@ -670,7 +716,12 @@ function resetForm() {
   document.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
   document.querySelector('.vis-option').classList.add('selected');
   newServing = 2; stepCount = 0; selectedVis = 'private'; uploadedFile = null;
+  selectedDifficulty = 1; stepPhotoFiles = {};
   document.getElementById('newServingNum').textContent = '2';
+  document.getElementById('newPrepTime').value = '';
+  document.getElementById('newCookTime').value = '';
+  document.querySelectorAll('.diff-star').forEach((s,i) => s.classList.toggle('on', i===0));
+  document.getElementById('diffLabel').textContent = 'かんたん';
   addIngredientRow(); addIngredientRow();
   addStepRow();
 }
@@ -711,10 +762,19 @@ async function editCurrentRecipe() {
   currentIngredients.forEach(ing => addIngredientRow(ing.name, ing.amount||'', ing.unit||'g', ing.memo||''));
   if (!currentIngredients.length) { addIngredientRow(); addIngredientRow(); }
 
+  document.getElementById('newPrepTime').value = currentRecipe.prep_time || '';
+  document.getElementById('newCookTime').value = currentRecipe.cook_time || '';
+  const diff = currentRecipe.difficulty || 1;
+  selectedDifficulty = diff;
+  document.querySelectorAll('.diff-star').forEach((s,i) => s.classList.toggle('on', i < diff));
+  const diffLabels = ['','かんたん','ふつう','むずかしい'];
+  document.getElementById('diffLabel').textContent = diffLabels[diff];
+
   document.getElementById('newSteps').innerHTML = '';
   stepCount = 0;
+  stepPhotoFiles = {};
   const {data: stps} = await sb.from('steps').select('*').eq('recipe_id', editingId).order('order_num');
-  (stps||[]).forEach(s => addStepRow(s.content));
+  (stps||[]).forEach(s => addStepRow(s.content, s.photo_url||''));
   if (!(stps||[]).length) addStepRow();
 
   if (currentRecipe.photo_url) {
@@ -748,6 +808,9 @@ async function saveRecipe() {
     status: document.getElementById('newStatus').value,
     genre: document.getElementById('newGenre').value,
     main_ingredient: document.getElementById('newMainIngredient').value.trim(),
+    prep_time: parseInt(document.getElementById('newPrepTime').value) || null,
+    cook_time: parseInt(document.getElementById('newCookTime').value) || null,
+    difficulty: selectedDifficulty,
   };
 
   let recipeId = editingId;
@@ -779,11 +842,19 @@ async function saveRecipe() {
 
   // 手順保存
   await sb.from('steps').delete().eq('recipe_id', recipeId);
+  const stpRows = [...document.querySelectorAll('#newSteps .step-row')];
   const stps = [];
-  document.querySelectorAll('#newSteps .step-row').forEach((row, i) => {
+  for (let i = 0; i < stpRows.length; i++) {
+    const row = stpRows[i];
     const content = row.querySelector('textarea').value.trim();
-    if (content) stps.push({recipe_id: recipeId, order_num: i, type: 'cook', content});
-  });
+    if (!content) continue;
+    const idx = parseInt(row.dataset.stepIdx);
+    let photoUrl = null;
+    if (stepPhotoFiles[idx]) {
+      photoUrl = await uploadToCloudinary(stepPhotoFiles[idx]);
+    }
+    stps.push({recipe_id: recipeId, order_num: i, type: 'cook', content, photo_url: photoUrl});
+  }
   if (stps.length) await sb.from('steps').insert(stps);
 
   closeModal('formModal');
@@ -956,6 +1027,36 @@ function clearFridgeScan() {
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function setDifficulty(n) {
+  selectedDifficulty = n;
+  document.querySelectorAll('.diff-star').forEach((s,i) => s.classList.toggle('on', i < n));
+  const labels = ['','かんたん','ふつう','むずかしい'];
+  document.getElementById('diffLabel').textContent = labels[n];
+}
+
+function handleStepPhoto(idx, input) {
+  if (!input.files[0]) return;
+  stepPhotoFiles[idx] = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const area = input.closest('.step-photo-upload');
+    area.innerHTML = `<img src="${e.target.result}"><div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.5);color:white;font-size:10px;padding:2px 6px;border-radius:6px;z-index:1">変更</div><input type="file" accept="image/*" style="display:none" onchange="handleStepPhoto(${idx}, this)">`;
+    area.onclick = () => area.querySelector('input').click();
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  try {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {method:'POST', body:formData});
+    const data = await res.json();
+    return data.secure_url || null;
+  } catch(e) { console.error('Cloudinary upload error:', e); return null; }
+}
 
 function openProfileModal() {
   if (!currentUser) return;
