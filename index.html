@@ -885,34 +885,42 @@ function setIngredientSearchMode(mode) {
   applyFilters();
 }
 
+// ひらがな・カタカナを相互変換して正規化（どちらで入力しても一致させる）
+function toHiragana(str) {
+  return str.replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+function normalizeKana(str) {
+  return toHiragana((str || '').toLowerCase());
+}
+
 function applyFilters() {
-  const titleQ = document.getElementById('searchInput').value.toLowerCase();
-  const ingQ = document.getElementById('ingredientSearchInput').value.toLowerCase();
+  const titleQ = normalizeKana(document.getElementById('searchInput').value);
+  const ingQ = normalizeKana(document.getElementById('ingredientSearchInput').value);
   let filtered = myRecipes;
   if (titleQ) {
-    filtered = filtered.filter(r => r.title.toLowerCase().includes(titleQ));
+    filtered = filtered.filter(r => normalizeKana(r.title).includes(titleQ));
   }
   if (fridgeScanIngredients.length > 0) {
     // 冷蔵庫スキャンモード: いずれかの食材を含むレシピを表示
     filtered = filtered.filter(r => {
       const allIngs = [
-        (r.main_ingredient || '').toLowerCase(),
-        ...(ingredientsMap[r.id] || []).map(n => n.toLowerCase())
+        normalizeKana(r.main_ingredient || ''),
+        ...(ingredientsMap[r.id] || []).map(n => normalizeKana(n))
       ];
       return fridgeScanIngredients.some(fi => {
-        const fiLower = fi.toLowerCase();
-        return allIngs.some(ing => ing.includes(fiLower) || fiLower.includes(ing));
+        const fiNorm = normalizeKana(fi);
+        return allIngs.some(ing => ing.includes(fiNorm) || fiNorm.includes(ing));
       });
     });
   } else if (ingQ) {
     filtered = filtered.filter(r => {
-      const mainIng = (r.main_ingredient || '').toLowerCase();
+      const mainIng = normalizeKana(r.main_ingredient || '');
       if (ingredientSearchMode === 'main') {
         if (mainIng) return mainIng.includes(ingQ);
-        return (ingredientsMap[r.id] || []).some(n => n.toLowerCase().includes(ingQ));
+        return (ingredientsMap[r.id] || []).some(n => normalizeKana(n).includes(ingQ));
       }
       const mainMatch = mainIng.includes(ingQ);
-      const otherMatch = (ingredientsMap[r.id] || []).some(n => n.toLowerCase().includes(ingQ));
+      const otherMatch = (ingredientsMap[r.id] || []).some(n => normalizeKana(n).includes(ingQ));
       return mainMatch || otherMatch;
     });
   }
